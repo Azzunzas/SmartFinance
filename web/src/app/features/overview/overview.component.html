@@ -1,0 +1,371 @@
+<header class="overview-header">
+  <div>
+    <p class="eyebrow">Painel financeiro</p>
+    <h1>Visão Geral</h1>
+    <p class="muted">Uma leitura rápida da sua posição financeira atual.</p>
+  </div>
+  <div class="sync-control">
+    @if (syncing()) {
+      <div class="sync-placeholder" role="status">
+        <span class="sync-spinner" aria-hidden="true"></span>
+        Sincronizando…
+      </div>
+    } @else {
+      <button type="button" class="btn-primary" (click)="startSync()">Sincronizar agora</button>
+    }
+  </div>
+</header>
+
+<section class="card sync-history" aria-labelledby="sync-history-title">
+  <div>
+    <h2 id="sync-history-title">Sincronizações recentes</h2>
+    @if (syncMessage()) {
+      <p role="status">{{ syncMessage() }}</p>
+    } @else {
+      <p class="muted">A sincronização atualiza todas as conexões e recalcula as análises.</p>
+    }
+  </div>
+  @if (syncRuns.isLoading()) {
+    <span class="muted">Carregando histórico…</span>
+  } @else if (latestSync(); as run) {
+    <div class="latest-sync">
+      <strong>{{ syncStatusLabel(run.status) }}</strong>
+      <span>{{ run.connector_name ?? 'Banco não identificado' }}</span>
+      <span>{{ run.started_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+      <span>{{ run.tx_inserted }} novas · {{ run.tx_updated }} atualizadas</span>
+      @if (run.error_message) {
+        <span class="sync-note">{{ run.error_message }}</span>
+      }
+      @if ((syncRuns.value()?.length ?? 0) > 1) {
+        <button type="button" (click)="syncDetailsOpen.update((open) => !open)">
+          {{ syncDetailsOpen() ? 'Ocultar detalhes' : 'Ver detalhes' }}
+        </button>
+      }
+    </div>
+  } @else {
+    <span class="muted">Nenhuma execução registrada.</span>
+  }
+
+  @if (syncDetailsOpen()) {
+    <ul class="sync-details">
+      @for (run of syncRuns.value()?.slice(1); track run.id) {
+        <li>
+          <strong>{{ syncStatusLabel(run.status) }}</strong>
+          <span>{{ run.connector_name ?? 'Banco não identificado' }}</span>
+          <span>{{ run.started_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+          <span>{{ run.tx_inserted }} novas · {{ run.tx_updated }} atualizadas</span>
+          @if (run.error_message) {
+            <span class="sync-note">{{ run.error_message }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+@if (overview.isLoading()) {
+  <p class="loading-state">Carregando resumo financeiro...</p>
+} @else if (overview.error()) {
+  <p class="error-state">Erro ao carregar o resumo financeiro.</p>
+} @else if (overview.value(); as data) {
+  <div class="summary-grid">
+    <section class="card summary-card net-worth-card">
+      <h2>Patrimônio líquido</h2>
+      <p class="card-total" [class]="amountClass(data.net_worth)">
+        {{ +data.net_worth | currency: 'BRL' }}
+      </p>
+      @if (netWorthVariation() !== null) {
+        <p class="card-subtext" [class]="variationClass(netWorthVariation()!)">
+          {{ netWorthVariation()! >= 0 ? '+' : '' }}{{ netWorthVariation()! | currency: 'BRL' }} nos
+          últimos 90 dias
+        </p>
+      } @else {
+        <p class="card-subtext muted">Sem histórico suficiente para calcular variação</p>
+      }
+    </section>
+
+    <section class="card summary-card">
+      <h2>Saldo disponível</h2>
+      <p class="card-total positive">{{ bankTotal() | currency: 'BRL' }}</p>
+      <p class="card-subtext muted">
+        {{ bankAccounts().length }} {{ bankAccounts().length === 1 ? 'conta' : 'contas' }}
+      </p>
+    </section>
+
+    <section class="card summary-card">
+      <h2>Cartão de crédito</h2>
+      <p class="card-total negative">{{ +data.open_credit_card_bill | currency: 'BRL' }}</p>
+      <span class="badge badge-debt">Fatura em aberto</span>
+      <p class="card-subtext muted">
+        {{ creditAccounts().length }}
+        {{ creditAccounts().length === 1 ? 'cartão conectado' : 'cartões conectados' }}
+      </p>
+    </section>
+
+    <section class="card summary-card">
+      <h2>Investimentos</h2>
+      <p class="card-total">{{ +data.investments_balance | currency: 'BRL' }}</p>
+      <p class="card-subtext muted">Patrimônio investido</p>
+    </section>
+  </div>
+}
+
+<section class="financial-health">
+  @if (financialHealth.isLoading()) {
+    <p class="loading-state">Calculando saúde financeira...</p>
+  } @else if (financialHealth.error()) {
+    <p class="error-state">Erro ao carregar a saúde financeira.</p>
+  } @else if (financialHealth.value(); as health) {
+    @if (health.score !== null && health.status !== null) {
+      <div
+        class="health-score"
+        [class.health-good]="health.status === 'HEALTHY'"
+        [class.health-warning]="health.status === 'ATTENTION'"
+        [class.health-critical]="health.status === 'CRITICAL'"
+      >
+        <strong>{{ health.score }}</strong
+        ><span>/100</span>
+      </div>
+      <div class="health-content">
+        <div class="title-with-help">
+          <h2>Saúde financeira: {{ health.status | healthStatusLabel }}</h2>
+          <button
+            type="button"
+            class="chart-help"
+            aria-label="Como a saúde financeira é calculada"
+            data-tooltip="Nota própria do SmartFinance: saldo mensal vale 50%, cobertura da fatura 30% e tendência do patrimônio 20%. Não é recomendação financeira."
+          >
+            !
+          </button>
+        </div>
+        <div
+          class="health-meter"
+          role="progressbar"
+          aria-label="Nota de saúde financeira"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-valuenow]="health.score"
+        >
+          <span [style.width.%]="health.score"></span>
+        </div>
+        <div class="health-factors">
+          <span>Economia média: {{ health.savings_rate | percent: '1.0-0' }}</span>
+          <span>Cobertura da fatura: {{ health.bill_coverage | number: '1.1-1' }}×</span>
+          <span>Tendência patrimonial: {{ health.net_worth_trend | percent: '1.0-1' }}</span>
+        </div>
+      </div>
+    } @else {
+      <div class="health-icon" aria-hidden="true">!</div>
+      <div>
+        <h2>Saúde financeira</h2>
+        <p class="muted">Ainda não há três meses completos com renda para calcular o indicador.</p>
+      </div>
+    }
+  } @else {
+    <div class="health-icon" aria-hidden="true">!</div>
+    <div>
+      <h2>Saúde financeira</h2>
+      <p class="muted">Ainda não há três meses completos com renda para calcular o indicador.</p>
+    </div>
+  }
+</section>
+
+<div class="insights-grid">
+  <section class="card insight-card">
+    <header class="insight-header">
+      <div>
+        <div class="title-with-help">
+          <h2>Receitas × despesas</h2>
+          <button
+            type="button"
+            class="chart-help"
+            aria-label="Como ler receitas e despesas"
+            data-tooltip="Compare as barras de cada mês. Receitas acima das despesas indicam saldo mensal positivo; o mês atual pode estar incompleto."
+          >
+            !
+          </button>
+        </div>
+        <p class="muted">Últimos seis meses</p>
+      </div>
+    </header>
+    @if (cashflow.isLoading()) {
+      <p class="loading-state">Carregando fluxo de caixa...</p>
+    } @else if (cashflow.error()) {
+      <p class="error-state">Erro ao carregar o fluxo de caixa.</p>
+    } @else if (hasCashflowData()) {
+      <div echarts [options]="cashflowChartOptions()" class="insight-chart"></div>
+    } @else {
+      <p class="empty-state muted">Nenhum fluxo de caixa encontrado no período.</p>
+    }
+  </section>
+
+  <section class="card insight-card">
+    <header class="insight-header">
+      <div>
+        <div class="title-with-help">
+          <h2>Para onde meu dinheiro está indo?</h2>
+          <button
+            type="button"
+            class="chart-help"
+            aria-label="Como ler os gastos por categoria"
+            data-tooltip="As barras somam despesas lançadas por categoria. Passe sobre uma barra para ver os três principais estabelecimentos ou descrições."
+          >
+            !
+          </button>
+        </div>
+        <p class="muted">{{ categoryTotal() | currency: 'BRL' }} em despesas categorizadas</p>
+      </div>
+      <input
+        #categoryMonth
+        type="month"
+        aria-label="Mês dos gastos por categoria"
+        [value]="categoryPeriod()"
+        (change)="setCategoryPeriod(categoryMonth.value)"
+      />
+    </header>
+    @if (categorySpend.isLoading()) {
+      <p class="loading-state">Carregando gastos por categoria...</p>
+    } @else if (categorySpend.error()) {
+      <p class="error-state">Erro ao carregar os gastos por categoria.</p>
+    } @else if (categorySpend.value()?.length) {
+      <div echarts [options]="categoryChartOptions()" class="insight-chart"></div>
+    } @else {
+      <p class="empty-state muted">Nenhum gasto encontrado neste mês.</p>
+    }
+  </section>
+</div>
+
+<div class="section-header net-worth-header">
+  <div>
+    <p class="eyebrow">Evolução</p>
+    <div class="title-with-help">
+      <h2 class="section-title">Patrimônio líquido</h2>
+      <button
+        type="button"
+        class="chart-help"
+        aria-label="Como ler o patrimônio líquido"
+        data-tooltip="A linha soma contas e investimentos e subtrai a fatura aberta. Dias sem sincronização repetem o último saldo conhecido."
+      >
+        !
+      </button>
+    </div>
+  </div>
+  <span class="muted history-period">Últimos 90 dias</span>
+</div>
+
+<section class="card history-card">
+  @if (netWorthHistory.isLoading()) {
+    <p class="loading-state">Carregando histórico de patrimônio...</p>
+  } @else if (netWorthHistory.error()) {
+    <p class="error-state">Erro ao carregar o histórico de patrimônio.</p>
+  } @else if (hasNetWorthData()) {
+    <div echarts [options]="netWorthChartOptions()" class="history-chart"></div>
+  } @else {
+    <p class="empty-state muted">Ainda não há snapshots suficientes para mostrar a evolução.</p>
+  }
+</section>
+
+<div class="section-header">
+  <div>
+    <p class="eyebrow">Planejamento</p>
+    <div class="title-with-help">
+      <h2 class="section-title">Compromissos futuros</h2>
+      <button
+        type="button"
+        class="chart-help"
+        aria-label="Como ler compromissos futuros"
+        data-tooltip="As barras projetam transações pendentes e parcelas futuras por mês. Não representam todas as despesas que ainda serão feitas."
+      >
+        !
+      </button>
+    </div>
+  </div>
+  <div class="period-toggle">
+    <button type="button" [class.active]="months() === 6" (click)="months.set(6)">6 meses</button>
+    <button type="button" [class.active]="months() === 12" (click)="months.set(12)">
+      12 meses
+    </button>
+  </div>
+</div>
+
+<section class="card commitments-card">
+  @if (upcoming.isLoading()) {
+    <p class="loading-state">Carregando compromissos futuros...</p>
+  } @else if (upcoming.error()) {
+    <p class="error-state">Erro ao carregar os compromissos futuros.</p>
+  } @else if (upcoming.value()?.length) {
+    <div echarts [options]="upcomingChartOptions()" class="chart"></div>
+    <p class="card-subtext muted">
+      Total comprometido nos próximos {{ months() }} meses
+      <strong class="negative">{{ totalCommitted() | currency: 'BRL' }}</strong>
+    </p>
+  } @else {
+    <p class="muted">Nenhum compromisso futuro encontrado.</p>
+  }
+</section>
+
+@if (attentionConnections().length) {
+  <h2 class="section-title attention-title">Atenção</h2>
+
+  <div class="alert-list">
+    @for (connection of attentionConnections(); track connection.connection_id) {
+      <div class="alert">
+        @if (connection.consent_expiring) {
+          <p>
+            O consentimento da conexão com <strong>{{ connection.connector_name }}</strong> está
+            prestes a expirar
+            @if (connection.consent_expires_at) {
+              (em {{ connection.consent_expires_at | date: 'dd/MM/yyyy' }})
+            }
+            .
+          </p>
+        }
+        @if (connection.connection_stale) {
+          <p>
+            A conexão com <strong>{{ connection.connector_name }}</strong> está desatualizada
+            @if (connection.last_updated_at) {
+              — última sincronização em {{ connection.last_updated_at | date: 'dd/MM/yyyy HH:mm' }}
+            }
+            .
+          </p>
+        }
+      </div>
+    }
+  </div>
+}
+
+<section class="card recent-transactions">
+  <header>
+    <div>
+      <p class="eyebrow">Movimentações</p>
+      <h2>Últimas transações</h2>
+    </div>
+    <a routerLink="/transactions">Ver todas</a>
+  </header>
+  @if (recentTransactions.isLoading()) {
+    <p class="loading-state">Carregando transações…</p>
+  } @else if (recentTransactions.error()) {
+    <p class="error-state">Não foi possível carregar as últimas transações.</p>
+  } @else if (recentTransactions.value(); as page) {
+    <div class="recent-list">
+      @for (transaction of page.items; track transaction.id) {
+        <article>
+          <time>{{ transaction.accrual_date | date: 'dd/MM' }}</time>
+          <div>
+            <strong>{{ transaction.description }}</strong
+            ><span
+              >{{ transaction.account_name ?? 'Conta sem nome' }} ·
+              {{ transaction.payment_method | paymentMethodLabel }}</span
+            >
+          </div>
+          <strong [class]="transaction.direction === 'IN' ? 'positive' : 'negative'"
+            >{{ transaction.direction === 'IN' ? '+' : '−' }}
+            {{ +transaction.amount_abs | currency: 'BRL' }}</strong
+          >
+        </article>
+      } @empty {
+        <p class="muted">Nenhuma transação encontrada.</p>
+      }
+    </div>
+  }
+</section>

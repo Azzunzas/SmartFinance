@@ -1,0 +1,63 @@
+<header class="accounts-header">
+  <div>
+    <p class="eyebrow">Posição atual</p>
+    <h1>Contas</h1>
+    <p class="muted">Saldos das contas bancárias incluídas na sua análise financeira.</p>
+  </div>
+</header>
+
+@if (accounts.isLoading()) {
+  <p class="loading-state">Carregando contas...</p>
+} @else if (accounts.error()) {
+  <p class="error-state">Não foi possível carregar as contas.</p>
+} @else {
+  <section class="accounts-summary">
+    <div>
+      <span>Saldo disponível</span>
+      <strong class="positive">{{ totalBalance() | currency: 'BRL' }}</strong>
+      <small>somatório das contas listadas</small>
+    </div>
+    <div>
+      <span>Contas bancárias</span>
+      <strong>{{ bankAccounts().length }}</strong>
+      <small>contas bancárias conectadas</small>
+    </div>
+  </section>
+
+  <section class="accounts-section">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Instituições conectadas</p>
+        <h2 class="section-title">Suas contas</h2>
+      </div>
+    </div>
+
+    <div class="accounts-grid">
+      @for (account of bankAccounts(); track account.id) {
+        <article class="account-card">
+          <div class="account-card-header">
+            <span class="account-mark" aria-hidden="true">$</span>
+            <span class="account-type">{{ account.subtype ?? 'Conta bancária' }}</span>
+          </div>
+          <h3>{{ account.name ?? 'Conta sem nome' }}</h3>
+          <p class="account-balance" [class]="amountClass(account.balance)">
+            {{ +(account.balance ?? 0) | currency: 'BRL' }}
+          </p>
+          <p class="account-label">Saldo atual</p>
+          <dl class="account-details">
+            @if (account.number_masked) {
+              <div><dt>Final</dt><dd>{{ account.number_masked }}</dd></div>
+            }
+            <div><dt>Análise</dt><dd>{{ account.include_in_analysis ? 'Incluída' : 'Fora da análise' }}</dd></div>
+          </dl>
+          <div class="sync-date">Atualizada em {{ account.updated_at | date: 'dd/MM/yyyy HH:mm' }}</div>
+        </article>
+      } @empty {
+        <section class="empty-state">
+          <h3>Nenhuma conta bancária conectada</h3>
+          <p class="muted">Conecte uma instituição e rode a sincronização para visualizar seus saldos aqui.</p>
+        </section>
+      }
+    </div>
+  </section>
+}

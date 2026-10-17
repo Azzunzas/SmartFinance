@@ -1,0 +1,111 @@
+<header class="recurrences-header">
+  <div>
+    <p class="eyebrow">Análise automática</p>
+    <h1>Recorrências</h1>
+    <p class="muted">Sugestões identificadas a partir do seu histórico de transações.</p>
+  </div>
+</header>
+
+@if (candidates.isLoading()) {
+  <p class="loading-state">Analisando recorrências...</p>
+} @else if (candidates.error()) {
+  <p class="error-state">Erro ao carregar os candidatos.</p>
+} @else {
+  <section class="recurrence-summary" aria-label="Impacto mensal estimado das recorrências">
+    <div>
+      <span>Receitas recorrentes</span>
+      <strong class="positive">{{ recurringIncome() | currency: 'BRL' }}</strong>
+      <small>média mensal detectada</small>
+    </div>
+    <div>
+      <span>Despesas recorrentes</span>
+      <strong class="negative">{{ recurringExpenses() | currency: 'BRL' }}</strong>
+      <small>média mensal detectada</small>
+    </div>
+    <div class="recurrence-balance">
+      <span>Saldo recorrente esperado</span>
+      <strong [class]="recurringBalance() >= 0 ? 'positive' : 'negative'">
+        {{ recurringBalance() | currency: 'BRL' }}
+      </strong>
+      <small>estimativa baseada nos candidatos</small>
+    </div>
+  </section>
+
+  <section class="recurrence-section">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Entradas</p>
+        <h2 class="section-title">Receitas recorrentes</h2>
+      </div>
+      <span class="section-count">{{ incomeCandidates().length }} sugestões</span>
+    </div>
+
+    <div class="recurrence-grid">
+      @for (candidate of incomeCandidates(); track candidate.id) {
+        <article class="recurrence-card income-card">
+          <div class="candidate-heading">
+            <h3>{{ candidate.description_norm }}</h3>
+            @if (candidate.promoted_to) {
+              <span class="status-promoted">No orçamento</span>
+            } @else {
+              <span class="status-suggestion">Sugestão</span>
+            }
+          </div>
+          <p class="candidate-amount positive">{{ +candidate.avg_amount | currency: 'BRL' }}</p>
+          <p class="candidate-frequency">A cada {{ +candidate.avg_interval_days | number: '1.0-0' }} dias</p>
+          <dl class="candidate-details">
+            <div><dt>Ocorrências</dt><dd>{{ candidate.occurrences }}</dd></div>
+            <div><dt>Índice</dt><dd>{{ +candidate.regularity_score | number: '1.2-2' }}</dd></div>
+            <div><dt>Última ocorrência</dt><dd>{{ candidate.last_seen_date | date: 'dd/MM/yyyy' }}</dd></div>
+          </dl>
+          @if (candidate.promoted_to) {
+            <a class="btn-secondary full-width" [routerLink]="['/budget', candidate.promoted_to]">Ver orçamento</a>
+          } @else {
+            <a class="btn-primary full-width" [routerLink]="[candidate.id, 'promote']">Promover para orçamento</a>
+          }
+        </article>
+      } @empty {
+        <div class="empty-state">Nenhuma receita recorrente detectada ainda.</div>
+      }
+    </div>
+  </section>
+
+  <section class="recurrence-section">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Saídas</p>
+        <h2 class="section-title">Despesas recorrentes</h2>
+      </div>
+      <span class="section-count">{{ expenseCandidates().length }} sugestões</span>
+    </div>
+
+    <div class="recurrence-grid">
+      @for (candidate of expenseCandidates(); track candidate.id) {
+        <article class="recurrence-card expense-card">
+          <div class="candidate-heading">
+            <h3>{{ candidate.description_norm }}</h3>
+            @if (candidate.promoted_to) {
+              <span class="status-promoted">No orçamento</span>
+            } @else {
+              <span class="status-suggestion">Sugestão</span>
+            }
+          </div>
+          <p class="candidate-amount negative">{{ +candidate.avg_amount | currency: 'BRL' }}</p>
+          <p class="candidate-frequency">A cada {{ +candidate.avg_interval_days | number: '1.0-0' }} dias</p>
+          <dl class="candidate-details">
+            <div><dt>Ocorrências</dt><dd>{{ candidate.occurrences }}</dd></div>
+            <div><dt>Índice</dt><dd>{{ +candidate.regularity_score | number: '1.2-2' }}</dd></div>
+            <div><dt>Última ocorrência</dt><dd>{{ candidate.last_seen_date | date: 'dd/MM/yyyy' }}</dd></div>
+          </dl>
+          @if (candidate.promoted_to) {
+            <a class="btn-secondary full-width" [routerLink]="['/budget', candidate.promoted_to]">Ver orçamento</a>
+          } @else {
+            <a class="btn-primary full-width" [routerLink]="[candidate.id, 'promote']">Promover para orçamento</a>
+          }
+        </article>
+      } @empty {
+        <div class="empty-state">Nenhuma despesa recorrente detectada ainda.</div>
+      }
+    </div>
+  </section>
+}

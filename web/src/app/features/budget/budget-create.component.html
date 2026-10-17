@@ -1,0 +1,66 @@
+@if (!modal()) {
+  <header class="create-header">
+    <p class="eyebrow">Planejamento</p>
+    <h1>Novo item de orçamento</h1>
+    <p class="muted">Defina o valor esperado e as regras de vigência deste item.</p>
+  </header>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="budget-form">
+  <label>
+    Nome
+    <input type="text" formControlName="name" />
+  </label>
+
+  <label>
+    Tipo
+    <select formControlName="kind">
+      @for (kind of kinds; track kind) {
+        <option [value]="kind">{{ kind | plannedKindLabel }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Valor esperado (R$)
+    <input type="number" step="0.01" formControlName="expected_amount" />
+  </label>
+
+  <label>
+    Tolerância (%)
+    <input type="number" step="0.1" formControlName="tolerance_pct" />
+  </label>
+
+  <label>
+    Dia esperado do mês
+    <input type="number" min="1" max="31" formControlName="expected_day" />
+  </label>
+
+  <label>
+    Tolerância de dias
+    <input type="number" formControlName="day_tolerance" />
+  </label>
+
+  <label>
+    Vigente a partir de
+    <input type="date" formControlName="valid_from" />
+  </label>
+
+  <label>
+    Vigente até (opcional)
+    <input type="date" formControlName="valid_to" />
+  </label>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  <div class="form-actions">
+    @if (modal()) {
+      <button type="button" class="btn-secondary" (click)="cancelled.emit()">Cancelar</button>
+    }
+    <button type="submit" class="btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Salvando...' : 'Salvar orçamento' }}
+    </button>
+  </div>
+</form>

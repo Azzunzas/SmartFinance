@@ -1,0 +1,223 @@
+.recurrences-header {
+  margin-bottom: 2rem;
+}
+
+.recurrences-header h1,
+.recurrences-header p {
+  margin: 0;
+}
+
+.recurrences-header h1 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+  letter-spacing: -0.04em;
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.recurrence-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+}
+
+.recurrence-summary div {
+  display: flex;
+  min-height: 8rem;
+  flex-direction: column;
+  padding: 1.2rem;
+  border-right: 1px solid var(--color-border);
+}
+
+.recurrence-summary div:last-child {
+  border-right: 0;
+}
+
+.recurrence-summary span,
+.recurrence-summary small {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.recurrence-summary strong {
+  margin-top: auto;
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+  letter-spacing: -0.04em;
+}
+
+.recurrence-balance {
+  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface));
+}
+
+.recurrence-section {
+  margin-bottom: 2.25rem;
+}
+
+.section-header {
+  margin-bottom: 0.75rem;
+}
+
+.section-header .eyebrow,
+.section-header .section-title {
+  margin: 0;
+}
+
+.section-count {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.recurrence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.recurrence-card {
+  display: flex;
+  min-height: 18rem;
+  flex-direction: column;
+  padding: 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+}
+
+.income-card {
+  border-left: 3px solid var(--color-positive);
+}
+
+.expense-card {
+  border-left: 3px solid var(--color-negative);
+}
+
+.candidate-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.candidate-heading h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.status-promoted,
+.status-suggestion {
+  flex: none;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.status-promoted {
+  background: color-mix(in srgb, var(--color-positive) 16%, transparent);
+  color: var(--color-positive);
+}
+
+.status-suggestion {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
+}
+
+.candidate-amount {
+  margin: auto 0 0.3rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.candidate-frequency {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.candidate-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.85rem 0;
+  border-block: 1px solid var(--color-border);
+}
+
+.candidate-details div {
+  min-width: 0;
+}
+
+.candidate-details dt,
+.candidate-details dd {
+  margin: 0;
+}
+
+.candidate-details dt {
+  color: var(--color-text-muted);
+  font-size: 0.67rem;
+}
+
+.candidate-details dd {
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: auto;
+  text-align: center;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.empty-state {
+  padding: 1.25rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.loading-state {
+  color: var(--color-text-muted);
+}
+
+.error-state {
+  color: var(--color-negative);
+}
+
+@media (max-width: 760px) {
+  .recurrence-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .recurrence-summary div {
+    min-height: 6.25rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .recurrence-summary div:last-child {
+    border-bottom: 0;
+  }
+}

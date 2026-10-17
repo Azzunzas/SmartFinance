@@ -1,0 +1,78 @@
+<header class="cards-header">
+  <div>
+    <p class="eyebrow">Crédito</p>
+    <h1>Cartões</h1>
+    <p class="muted">Acompanhe as faturas em aberto dos cartões conectados.</p>
+  </div>
+</header>
+
+@if (cards.isLoading()) {
+  <p class="loading-state">Carregando cartões...</p>
+} @else if (cards.error()) {
+  <p class="error-state">Não foi possível carregar os cartões.</p>
+} @else {
+  <section class="cards-summary">
+    <div>
+      <span>Fatura total em aberto</span>
+      <strong class="negative">{{ totalBill() | currency: 'BRL' }}</strong>
+      <small>somatório das faturas listadas</small>
+    </div>
+    <div>
+      <span>Cartões conectados</span>
+      <strong>{{ creditCards().length }}</strong>
+      <small>cartões de crédito conectados</small>
+    </div>
+  </section>
+
+  <section class="cards-section">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Faturas atuais</p>
+        <h2 class="section-title">Seus cartões</h2>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      @for (card of creditCards(); track card.id) {
+        <article class="credit-card">
+          <div class="card-topline">
+            <span class="card-icon" aria-hidden="true">▭</span>
+            <span class="open-bill-badge">Fatura em aberto</span>
+          </div>
+          <h3>{{ card.name ?? 'Cartão sem nome' }}</h3>
+          <p class="card-identity">
+            {{ card.brand ?? 'Bandeira não informada' }}
+            @if (card.number_masked) { · {{ card.number_masked }} }
+          </p>
+          <p class="bill-amount negative">{{ +(card.balance ?? 0) | currency: 'BRL' }}</p>
+          <p class="bill-label">Fatura atual</p>
+          @if (card.credit_limit) {
+            <div class="limit-progress">
+              <div class="limit-track"><span [style.width.%]="utilizationPercent(card.balance, card.credit_limit)"></span></div>
+              <p>
+                {{ +(card.available_credit_limit ?? 0) | currency: 'BRL' }} disponível de
+                {{ +card.credit_limit | currency: 'BRL' }}
+              </p>
+            </div>
+          }
+          <dl class="card-details">
+            @if (card.balance_due_date) {
+              <div><dt>Próximo vencimento</dt><dd>{{ card.balance_due_date | date: 'dd/MM/yyyy' }}</dd></div>
+            }
+            @if (card.minimum_payment) {
+              <div><dt>Pagamento mínimo</dt><dd>{{ +card.minimum_payment | currency: 'BRL' }}</dd></div>
+            }
+          </dl>
+          <div class="card-updated">
+            Atualizado em {{ card.updated_at | date: 'dd/MM/yyyy HH:mm' }}
+          </div>
+        </article>
+      } @empty {
+        <section class="empty-state">
+          <h3>Nenhum cartão conectado</h3>
+          <p class="muted">Quando houver cartões sincronizados, as faturas em aberto aparecerão aqui.</p>
+        </section>
+      }
+    </div>
+  </section>
+}

@@ -1,0 +1,12 @@
+.bulk-hint {
+  margin: -0.75rem 0 1.25rem !important;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.note-toggle {
+  display: flex !important;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+}

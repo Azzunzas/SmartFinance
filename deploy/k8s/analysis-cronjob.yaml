@@ -1,0 +1,62 @@
+# Reprocessa classificação, transferência interna, recorrência, matching de
+# orçamento e dá REFRESH na mv_monthly_cashflow.
+#
+# 06:30, meia hora depois dos syncs das 06:00: `run_analysis` lê o que já está
+# no banco, então precisa rodar DEPOIS. Sem este CronJob (situação até
+# 2026-08-23) o dashboard mostrava número velho sem avisar — transação nova
+# entrava no banco e a view materializada continuava parada.
+#
+# Reprocessa tudo, não é incremental — é idempotente por definição, então rodar
+# de novo nunca é errado, no máximo é desperdício.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: smartfinance-analysis
+spec:
+  schedule: "30 6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          containers:
+            - name: analysis
+              # Mesma imagem do sync: ela já carrega core/ e jobs/ inteiros.
+              # O entrypoint é `python -m jobs.sync`, então sobrescrevemos.
+              image: localhost:5000/smartfinance-sync:dev
+              command: ["python", "-m", "jobs.analysis"]
+              envFrom:
+                - secretRef: { name: smartfinance-secrets }
+---
+# Avisa quando o consentimento do Open Finance está perto de expirar ou quando
+# uma conexão está fora de UPDATED. Semanal: consentimento expira em meses, e
+# conexão travada já aparece no histórico de sync da tela.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: smartfinance-check-consent
+spec:
+  schedule: "0 9 * * 1"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          containers:
+            - name: check-consent
+              image: localhost:5000/smartfinance-sync:dev
+              command: ["python", "-m", "jobs.check_consent"]
+              envFrom:
+                - secretRef: { name: smartfinance-secrets }

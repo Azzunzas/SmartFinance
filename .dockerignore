@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.git/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+tests/
+node_modules/
+.angular/
+web/dist/
+
+# `web/` NÃO entra nesta lista: a imagem do front (deploy/web.Dockerfile) precisa
+# do código Angular no contexto de build. As imagens Python não são afetadas —
+# api.Dockerfile e sync.Dockerfile copiam só core/, jobs/, api/ e alembic/
+# explicitamente, nunca o contexto inteiro. O que encarece o contexto de verdade
+# (node_modules, .angular, dist) continua excluído acima.

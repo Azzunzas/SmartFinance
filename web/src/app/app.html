@@ -1,0 +1,102 @@
+@if (authState.isAuthenticated()) {
+  <aside
+    class="app-shell-sidebar"
+    [class.is-collapsed]="sidebarCollapsed()"
+    aria-label="Navegação principal"
+  >
+    <button
+      class="sidebar-toggle"
+      type="button"
+      [attr.aria-label]="sidebarCollapsed() ? 'Expandir navegação' : 'Recolher navegação'"
+      [attr.aria-expanded]="!sidebarCollapsed()"
+      [title]="sidebarCollapsed() ? 'Expandir navegação' : 'Recolher navegação'"
+      (click)="sidebarCollapsed.update((collapsed) => !collapsed)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+    </button>
+
+    <a class="app-shell-brand" routerLink="/overview">
+      <span class="app-shell-mark">S</span>
+      <span class="app-shell-brand-name">SmartFinance</span>
+      <small>Saúde financeira pessoal</small>
+    </a>
+
+    <nav class="app-shell-nav">
+      <a
+        routerLink="/overview"
+        routerLinkActive="active"
+        aria-label="Visão Geral"
+        title="Visão Geral"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" />
+        </svg>
+        <span class="app-shell-nav-label">Visão Geral</span>
+      </a>
+      <a
+        routerLink="/transactions"
+        routerLinkActive="active"
+        aria-label="Transações"
+        title="Transações"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 3h9l3 3v15H6zM9 10h6M9 14h6M9 18h4" />
+          <path d="M15 3v4h4" />
+        </svg>
+        <span class="app-shell-nav-label">Transações</span>
+      </a>
+      <a routerLink="/budget" routerLinkActive="active" aria-label="Orçamento" title="Orçamento">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7.5h16v11H4zM7 7.5V5h10v2.5M8 13h.01M12 13h4" />
+        </svg>
+        <span class="app-shell-nav-label">Orçamento</span>
+      </a>
+      <a
+        routerLink="/recurrences"
+        routerLinkActive="active"
+        aria-label="Recorrências"
+        title="Recorrências"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 7h-4V3M4 17h4v4" />
+          <path d="M6.4 8.1A7 7 0 0 1 18 7M17.6 15.9A7 7 0 0 1 6 17" />
+        </svg>
+        <span class="app-shell-nav-label">Recorrências</span>
+      </a>
+      <a routerLink="/cards" routerLinkActive="active" aria-label="Cartões" title="Cartões">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 10h18M7 15h3" />
+        </svg>
+        <span class="app-shell-nav-label">Cartões</span>
+      </a>
+      <a routerLink="/accounts" routerLinkActive="active" aria-label="Contas" title="Contas">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m3 10 9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18" />
+        </svg>
+        <span class="app-shell-nav-label">Contas</span>
+      </a>
+      <a routerLink="/goals" routerLinkActive="active" aria-label="Metas" title="Metas">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="3" />
+          <path d="m15 9 5-5" />
+        </svg>
+        <span class="app-shell-nav-label">Metas</span>
+      </a>
+    </nav>
+
+    <div class="app-shell-session">
+      <span class="app-shell-username">{{ authState.username() }}</span>
+      <button type="button" class="logout-button" (click)="logout()" title="Sair">Sair</button>
+    </div>
+  </aside>
+
+  <main class="app-shell-main" [class.sidebar-collapsed]="sidebarCollapsed()">
+    <router-outlet />
+  </main>
+} @else {
+  <router-outlet />
+}

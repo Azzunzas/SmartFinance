@@ -1,0 +1,110 @@
+<div class="modal-backdrop" (click)="cancelled.emit()">
+  <section
+    class="classification-modal"
+    appModal
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="classification-title"
+    (dismissed)="cancelled.emit()"
+    (click)="$event.stopPropagation()"
+  >
+    <header>
+      <div>
+        <p class="eyebrow">Classificação manual</p>
+        <h2 id="classification-title">{{ transaction().description }}</h2>
+      </div>
+      <button type="button" class="modal-close" aria-label="Fechar" (click)="cancelled.emit()">
+        ×
+      </button>
+    </header>
+
+    <div class="classification-origin" aria-label="Origem da classificação">
+      <strong>Origem da classificação</strong>
+      <p>
+        Categoria automática: {{ categoryName(transaction().category_id_auto) }}
+        @if (transaction().category_id_manual !== null) {
+          <span>
+            Alterada manualmente para {{ categoryName(transaction().category_id_manual) }}
+            <button type="button" [disabled]="saving()" (click)="resetOverride('category_id')">
+              Voltar ao automático
+            </button>
+          </span>
+        }
+      </p>
+      <p>
+        Transferência automática: {{ booleanLabel(transaction().is_internal_transfer_auto) }}
+        @if (transaction().is_internal_transfer_manual !== null) {
+          <span
+            >Alterada manualmente para
+            {{ booleanLabel(transaction().is_internal_transfer_manual!) }}
+            <button
+              type="button"
+              [disabled]="saving()"
+              (click)="resetOverride('is_internal_transfer')"
+            >
+              Voltar ao automático
+            </button>
+          </span>
+        }
+      </p>
+      <p>
+        Pagamento de fatura automático: {{ booleanLabel(transaction().is_card_payment_auto) }}
+        @if (transaction().is_card_payment_manual !== null) {
+          <span
+            >Alterado manualmente para
+            {{ booleanLabel(transaction().is_card_payment_manual!) }}
+            <button type="button" [disabled]="saving()" (click)="resetOverride('is_card_payment')">
+              Voltar ao automático
+            </button>
+          </span>
+        }
+      </p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Categoria
+        <select formControlName="category_id">
+          <option [ngValue]="null">Sem categoria</option>
+          @for (category of categories(); track category.id) {
+            @if (category.name !== 'Sem categoria') {
+              <option [ngValue]="category.id">{{ category.name }}</option>
+            }
+          }
+        </select>
+      </label>
+
+      <fieldset>
+        <legend>Tratamento nas análises</legend>
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="is_internal_transfer" />
+          Transferência entre contas próprias
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="is_card_payment" />
+          Pagamento de fatura
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="exclude_from_analysis" />
+          Excluir das análises
+        </label>
+      </fieldset>
+
+      <label>
+        Nota (opcional)
+        <textarea rows="3" formControlName="note"></textarea>
+      </label>
+
+      @if (errorMessage()) {
+        <p class="modal-error" role="alert">{{ errorMessage() }}</p>
+      }
+
+      <footer>
+        <button type="button" class="btn-secondary" (click)="cancelled.emit()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar classificação' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

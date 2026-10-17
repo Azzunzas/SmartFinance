@@ -1,0 +1,126 @@
+# Um CronJob por conexão bancária, todos no mesmo horário — decisão de
+# 2026-08-20: mais simples que um job só iterando uma lista de items, porque
+# o Kubernetes já isola falha de uma conexão das outras de graça (um Job
+# falhando não afeta os outros dois), sem precisar de lógica nova em
+# jobs/sync pra "continuar mesmo se uma falhar". Adicionar um banco novo é
+# só copiar mais um bloco aqui + uma chave em secret.yaml.
+#
+# Roda o sync incremental 1x/dia (cadência definida no doc §2 — Open Finance
+# atualiza diariamente, sincronizar mais que isso é desperdício).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: smartfinance-sync-picpay
+spec:
+  schedule: "0 6 * * *" # 06:00 todo dia
+  concurrencyPolicy: Forbid # não deixa dois syncs da mesma conexão rodarem ao mesmo tempo
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: sync
+              # Registry local em localhost:5000 (container `sf-registry`).
+              image: localhost:5000/smartfinance-sync:dev
+              args: ["$(PLUGGY_ITEM_ID)", "--kind", "INCREMENTAL"]
+              env:
+                - name: PLUGGY_ITEM_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_ITEM_ID_PICPAY
+                - name: PLUGGY_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_CLIENT_ID
+                - name: PLUGGY_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_CLIENT_SECRET
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: DATABASE_URL
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: smartfinance-sync-nubank
+spec:
+  schedule: "0 6 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: sync
+              image: localhost:5000/smartfinance-sync:dev
+              args: ["$(PLUGGY_ITEM_ID)", "--kind", "INCREMENTAL"]
+              env:
+                - name: PLUGGY_ITEM_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_ITEM_ID_NUBANK
+                - name: PLUGGY_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_CLIENT_ID
+                - name: PLUGGY_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_CLIENT_SECRET
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: DATABASE_URL
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: smartfinance-sync-santander
+spec:
+  schedule: "0 6 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: sync
+              image: localhost:5000/smartfinance-sync:dev
+              args: ["$(PLUGGY_ITEM_ID)", "--kind", "INCREMENTAL"]
+              env:
+                - name: PLUGGY_ITEM_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_ITEM_ID_SANTANDER
+                - name: PLUGGY_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_CLIENT_ID
+                - name: PLUGGY_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: PLUGGY_CLIENT_SECRET
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: smartfinance-secrets
+                      key: DATABASE_URL

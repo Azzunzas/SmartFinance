@@ -1,0 +1,130 @@
+<a class="back-link" routerLink="/budget">← Voltar para orçamento</a>
+
+@if (item.isLoading()) {
+  <p class="loading-state">Carregando orçamento...</p>
+} @else if (item.error()) {
+  <p class="error-state">Não foi possível carregar este orçamento.</p>
+} @else if (item.value(); as currentItem) {
+  <section class="item-overview">
+    <div>
+      <p class="eyebrow">Item de orçamento</p>
+      <div class="item-title-row">
+        <h1>{{ currentItem.name }}</h1>
+        <span class="badge badge-kind">{{ currentItem.kind | plannedKindLabel }}</span>
+      </div>
+      <p class="muted">Configure como as transações devem ser vinculadas a este planejamento.</p>
+    </div>
+    <button type="button" class="btn-danger" (click)="deleteItem()">Apagar orçamento</button>
+  </section>
+
+  <section class="item-stats" aria-label="Resumo do item de orçamento">
+    <div>
+      <span>Valor esperado</span>
+      <strong [class]="currentItem.kind === 'INCOME' ? 'positive' : 'negative'">
+        {{ +currentItem.expected_amount | currency: 'BRL' }}
+      </strong>
+    </div>
+    <div>
+      <span>Vigência</span>
+      <strong>{{ currentItem.valid_from | date: 'dd/MM/yyyy' }}</strong>
+      <small>{{ currentItem.valid_to ? ('até ' + (currentItem.valid_to | date: 'dd/MM/yyyy')) : 'vigente atualmente' }}</small>
+    </div>
+    <div>
+      <span>Tolerância</span>
+      <strong>{{ currentItem.tolerance_pct }}%</strong>
+      <small>variação de valor aceita</small>
+    </div>
+  </section>
+}
+
+<section class="rules-section">
+  <header class="rules-header">
+    <div>
+      <p class="eyebrow">Automação</p>
+      <h2>Regras de correspondência</h2>
+      <p class="muted">Teste uma regra antes de salvá-la para conferir quais transações ela encontra.</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="addRule()">+ Nova regra</button>
+  </header>
+
+  @for (rule of rules.controls; track $index; let i = $index) {
+    <article [formGroup]="rule" class="rule-card">
+      <header class="rule-card-header">
+        <div>
+          <span class="rule-number">Regra {{ i + 1 }}</span>
+          @if (rule.controls.id.value) {
+            <span class="saved-status">Salva</span>
+          } @else {
+            <span class="draft-status">Rascunho</span>
+          }
+        </div>
+        <button type="button" class="text-danger-button" (click)="removeRule(i)">Remover</button>
+      </header>
+
+      <div class="rule-fields">
+        <label>
+          Tipo de correspondência
+          <select formControlName="match_type">
+            @for (matchType of matchTypes; track matchType) {
+              <option [value]="matchType">{{ matchType | matchTypeLabel }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="wide-field">
+          Padrão
+          <input type="text" formControlName="pattern" placeholder="Ex.: netflix ou mercado" />
+        </label>
+
+        <label>
+          Valor mínimo
+          <input type="number" step="0.01" formControlName="amount_min" />
+        </label>
+
+        <label>
+          Valor máximo
+          <input type="number" step="0.01" formControlName="amount_max" />
+        </label>
+
+        <label>
+          Prioridade
+          <input type="number" formControlName="priority" />
+        </label>
+      </div>
+
+      @if (rule.errors?.['amountRange']) {
+        <p class="error">O valor mínimo deve ser menor ou igual ao máximo.</p>
+      }
+
+      <footer class="rule-actions">
+        <button type="button" class="btn-secondary" (click)="previewRule(i)">Testar regra</button>
+        <button type="button" class="btn-primary" (click)="saveRule(i)">Salvar regra</button>
+      </footer>
+
+      @if (previewResults()[i]; as result) {
+        <section class="rule-preview">
+          @if (result === 'error') {
+            <p class="error">Erro ao testar a regra.</p>
+          } @else {
+            <p><strong>{{ result.matched_count }}</strong> transação(ões) encontrada(s)</p>
+            @if (result.matches.length) {
+              <ul>
+                @for (match of result.matches; track match.transaction_id) {
+                  <li>
+                    <span>{{ match.description }}</span>
+                    <span>{{ +match.amount_abs | currency: 'BRL' }} · {{ match.period }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </section>
+      }
+    </article>
+  } @empty {
+    <section class="empty-rules">
+      <h3>Nenhuma regra cadastrada</h3>
+      <p class="muted">Adicione uma regra para relacionar automaticamente transações a este orçamento.</p>
+    </section>
+  }
+</section>

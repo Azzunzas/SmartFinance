@@ -1,0 +1,261 @@
+.app-shell-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 15.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  transition:
+    width 180ms ease,
+    padding 180ms ease;
+}
+
+.app-shell-brand {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.55rem;
+  align-items: center;
+  padding: 0 0.75rem;
+  margin-bottom: 2rem;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.app-shell-brand small {
+  grid-column: 2;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.app-shell-mark {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  grid-row: span 2;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.sidebar-toggle {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  align-self: flex-end;
+  margin-bottom: 1.25rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.sidebar-toggle:hover {
+  background: var(--color-surface-active);
+  color: var(--color-text);
+}
+
+.sidebar-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.app-shell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.app-shell-session {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.app-shell-username {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.logout-button:hover {
+  color: var(--color-negative);
+}
+
+.app-shell-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.app-shell-nav svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.app-shell-nav a.active {
+  background: var(--color-surface-active);
+  color: var(--color-accent);
+}
+
+.app-shell-main {
+  min-height: 100vh;
+  margin-left: 15.5rem;
+  padding: 2.5rem clamp(1.25rem, 3vw, 3rem);
+  transition: margin-left 180ms ease;
+}
+
+.app-shell-sidebar.is-collapsed {
+  width: 4.75rem;
+  padding-inline: 0.75rem;
+}
+
+.app-shell-sidebar.is-collapsed .sidebar-toggle svg {
+  transform: rotate(180deg);
+}
+
+.app-shell-sidebar.is-collapsed .sidebar-toggle {
+  align-self: center;
+}
+
+.app-shell-sidebar.is-collapsed .app-shell-brand {
+  display: block;
+  padding: 0;
+}
+
+.app-shell-sidebar.is-collapsed .app-shell-mark {
+  margin: 0 auto;
+}
+
+.app-shell-sidebar.is-collapsed .app-shell-brand-name,
+.app-shell-sidebar.is-collapsed .app-shell-brand small,
+.app-shell-sidebar.is-collapsed .app-shell-nav-label {
+  display: none;
+}
+
+.app-shell-sidebar.is-collapsed .app-shell-session {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.app-shell-sidebar.is-collapsed .app-shell-username {
+  display: none;
+}
+
+.app-shell-sidebar.is-collapsed .app-shell-nav a {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.app-shell-main.sidebar-collapsed {
+  margin-left: 4.75rem;
+}
+
+@media (max-width: 760px) {
+  .app-shell-sidebar {
+    position: static;
+    width: auto;
+    padding: 1rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sidebar-toggle {
+    display: none;
+  }
+
+  .app-shell-brand {
+    margin-bottom: 1rem;
+  }
+
+  .app-shell-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .app-shell-nav a {
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .app-shell-nav-label {
+    display: inline;
+  }
+
+  .app-shell-sidebar.is-collapsed {
+    width: auto;
+    padding: 1rem;
+  }
+
+  .app-shell-sidebar.is-collapsed .app-shell-brand {
+    display: grid;
+    padding: 0 0.75rem;
+    text-align: left;
+  }
+
+  .app-shell-sidebar.is-collapsed .app-shell-mark {
+    margin: 0;
+  }
+
+  .app-shell-sidebar.is-collapsed .app-shell-brand-name,
+  .app-shell-sidebar.is-collapsed .app-shell-brand small,
+  .app-shell-sidebar.is-collapsed .app-shell-nav-label {
+    display: inline;
+  }
+
+  .app-shell-main {
+    margin-left: 0;
+    padding: 1.5rem 1rem;
+  }
+
+  .app-shell-main.sidebar-collapsed {
+    margin-left: 0;
+  }
+}

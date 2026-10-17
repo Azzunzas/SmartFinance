@@ -1,0 +1,29 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="login-title">
+    <div class="auth-brand" aria-hidden="true">S</div>
+    <p class="auth-eyebrow">SmartFinance</p>
+    <h1 id="login-title">Boas-vindas de volta</h1>
+    <p class="auth-description">Entre para acessar sua visão financeira.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Usuário
+        <input type="text" formControlName="username" autocomplete="username" autofocus />
+      </label>
+      <label>
+        Senha
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </label>
+
+      @if (errorMessage()) {
+        <p class="auth-error" role="alert">{{ errorMessage() }}</p>
+      }
+
+      <button type="submit" class="auth-submit" [disabled]="submitting()">
+        {{ submitting() ? 'Entrando…' : 'Entrar' }}
+      </button>
+    </form>
+
+    <p class="auth-secondary">Primeira vez aqui? <a routerLink="/setup">Configurar acesso</a></p>
+  </section>
+</main>

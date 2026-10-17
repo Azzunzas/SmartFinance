@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartfinance-api
+spec:
+  # Um usuário só, sem gargalo medido (docs/regras-do-projeto.md §4). Escalar aqui É seguro
+  # desde 2026-08-24: o lock de sync virou advisory lock no Postgres
+  # (core/locks.py), então duas réplicas não conseguem sincronizar ao mesmo
+  # tempo. Antes disso era um threading.Lock e replicas: 1 era requisito, não
+  # escolha.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: smartfinance-api }
+  template:
+    metadata:
+      labels: { app: smartfinance-api }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: api
+          # Registry local em localhost:5000 (container `sf-registry`). O containerd
+          # do k3s aceita HTTP em localhost sem configuração extra — verificado.
+          image: localhost:5000/smartfinance-api:dev
+          # Always e não IfNotPresent: a tag `:dev` é mutável, então com
+          # IfNotPresent o k3s reaproveita a imagem já cacheada e um `rollout
+          # restart` sobe código velho sem nenhum erro aparecer — aconteceu em
+          # 2026-08-24, o endpoint novo dava 404 e o módulo novo não existia
+          # dentro do pod. Com tag imutável (:sha ou versão), IfNotPresent
+          # voltaria a ser a escolha certa.
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef: { name: smartfinance-secrets }
+          livenessProbe:
+            # /openapi.json não toca no banco: se o Postgres cair, a API não
+            # deve ser reiniciada em loop — ela está viva, a dependência é que
+            # não está. Quem checa o banco é a readiness, abaixo.
+            httpGet: { path: /openapi.json, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            # Readiness checa o BANCO, não o HTTP: sem Postgres a API sobe e
+            # responde, mas toda rota útil dá erro — não faz sentido receber
+            # tráfego. Testado nos dois sentidos dentro do container: exit 0
+            # com o banco no ar, exit 1 com ele fora.
+            exec:
+              command:
+                - python
+                - -c
+                - |
+                  import sqlalchemy as sa
+                  from core.database import create_session
+                  with create_session() as s:
+                      s.execute(sa.text("select 1"))
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # O nome importa: deploy/nginx.conf faz proxy_pass pra http://smartfinance-api:8000.
+  name: smartfinance-api
+spec:
+  selector: { app: smartfinance-api }
+  ports:
+    - port: 8000
+      targetPort: 8000

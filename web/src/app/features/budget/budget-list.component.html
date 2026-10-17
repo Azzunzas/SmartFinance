@@ -1,0 +1,125 @@
+<header class="budget-header">
+  <div>
+    <p class="eyebrow">Planejamento mensal</p>
+    <h1>Orçamento</h1>
+    <p class="muted">Organize receitas e despesas esperadas para entender sua margem mensal.</p>
+  </div>
+  <div class="budget-actions">
+    <label class="period-picker">
+      <span>Período</span>
+      <input #periodInput type="month" [value]="period()" (change)="setPeriod(periodInput.value)" />
+    </label>
+    <button type="button" class="btn-primary" (click)="addModalOpen.set(true)">
+      + Adicionar orçamento
+    </button>
+  </div>
+</header>
+
+@if (budget.isLoading()) {
+  <p class="loading-state">Carregando itens de orçamento...</p>
+} @else if (budget.error()) {
+  <p class="error-state">Erro ao carregar os itens de orçamento.</p>
+} @else {
+  <section class="budget-summary" aria-label="Resumo do orçamento mensal">
+    <div class="summary-item">
+      <span>Receita esperada</span>
+      <strong class="positive">{{ expectedIncome() | currency: 'BRL' }}</strong>
+      <small>Realizado: {{ actualIncome() | currency: 'BRL' }}</small>
+    </div>
+    <div class="summary-item">
+      <span>Despesas planejadas</span>
+      <strong class="negative">{{ plannedExpenses() | currency: 'BRL' }}</strong>
+      <small>Realizado: {{ actualExpenses() | currency: 'BRL' }}</small>
+    </div>
+    <div class="summary-item available-summary">
+      <span>Disponível para planejar</span>
+      <strong [class]="available() >= 0 ? 'positive' : 'negative'">{{
+        available() | currency: 'BRL'
+      }}</strong>
+      <small>receita esperada − despesas planejadas</small>
+    </div>
+  </section>
+
+  <section class="budget-section">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Entradas</p>
+        <h2 class="section-title">Receitas</h2>
+      </div>
+      <span class="section-count">{{ incomeItems().length }} itens</span>
+    </div>
+
+    <div class="budget-item-grid">
+      @for (item of incomeItems(); track item.planned_item_id) {
+        <a class="budget-item-card income-item" [routerLink]="['/budget', item.planned_item_id]">
+          <div class="item-card-heading">
+            <h3>{{ item.name }}</h3>
+            <span class="badge badge-kind">{{ item.kind | plannedKindLabel }}</span>
+          </div>
+          <p class="item-amount positive">{{ +item.expected_amount | currency: 'BRL' }}</p>
+          <div class="budget-progress" [class]="progressStatus(item)">
+            <div class="progress-track"><span [style.width.%]="progressPercent(item)"></span></div>
+            <p>Realizado: {{ +item.matched_amount | currency: 'BRL' }}</p>
+            <small>{{ progressLabel(item) }}</small>
+          </div>
+        </a>
+      } @empty {
+        <div class="empty-budget-state">Nenhuma receita cadastrada ainda.</div>
+      }
+    </div>
+  </section>
+
+  <section class="budget-section">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Saídas</p>
+        <h2 class="section-title">Despesas</h2>
+      </div>
+      <span class="section-count">{{ expenseItems().length }} itens</span>
+    </div>
+
+    <div class="budget-item-grid">
+      @for (item of expenseItems(); track item.planned_item_id) {
+        <a class="budget-item-card expense-item" [routerLink]="['/budget', item.planned_item_id]">
+          <div class="item-card-heading">
+            <h3>{{ item.name }}</h3>
+            <span class="badge badge-kind">{{ item.kind | plannedKindLabel }}</span>
+          </div>
+          <p class="item-amount negative">{{ +item.expected_amount | currency: 'BRL' }}</p>
+          <div class="budget-progress" [class]="progressStatus(item)">
+            <div class="progress-track"><span [style.width.%]="progressPercent(item)"></span></div>
+            <p>Realizado: {{ +item.matched_amount | currency: 'BRL' }}</p>
+            <small>{{ progressLabel(item) }}</small>
+          </div>
+        </a>
+      } @empty {
+        <div class="empty-budget-state">Nenhuma despesa cadastrada ainda.</div>
+      }
+    </div>
+  </section>
+}
+
+@if (addModalOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeAddModal()">
+    <section
+      class="budget-modal"
+      appModal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="budget-modal-title"
+      (dismissed)="closeAddModal()"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Novo planejamento</p>
+          <h2 id="budget-modal-title">Adicionar orçamento</h2>
+        </div>
+        <button type="button" class="modal-close" aria-label="Fechar" (click)="closeAddModal()">
+          ×
+        </button>
+      </header>
+      <app-budget-create [modal]="true" (cancelled)="closeAddModal()" (created)="onItemCreated()" />
+    </section>
+  </div>
+}

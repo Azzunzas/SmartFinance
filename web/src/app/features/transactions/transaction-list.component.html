@@ -1,0 +1,210 @@
+<header class="transactions-header">
+  <div>
+    <p class="eyebrow">Centro operacional</p>
+    <h1>Transações</h1>
+    <p class="muted">Consulte os lançamentos brutos e corrija classificações quando necessário.</p>
+  </div>
+</header>
+
+<section class="filter-panel">
+  <div class="filter-panel-header">
+    <div>
+      <h2>Filtros</h2>
+      <p class="muted">A busca usa a descrição normalizada do lançamento.</p>
+    </div>
+    <button type="button" class="clear-filters" (click)="clearFilters()">Limpar filtros</button>
+  </div>
+  <div class="filter-grid">
+    <form class="search-filter" (submit)="applySearch(search.value); $event.preventDefault()">
+      <label
+        >Buscar por descrição<input
+          #search
+          type="search"
+          [value]="filters().search ?? ''"
+          placeholder="Ex.: mercado, salário ou aluguel"
+      /></label>
+    </form>
+    <label
+      >Período<input
+        #period
+        type="month"
+        [value]="filters().period ?? ''"
+        (change)="setPeriod(period.value)"
+    /></label>
+    <label
+      >Direção<select
+        #direction
+        [value]="filters().direction ?? ''"
+        (change)="setDirection(direction.value)"
+      >
+        <option value="">Entradas e saídas</option>
+        <option value="IN">Entradas</option>
+        <option value="OUT">Saídas</option>
+      </select></label
+    >
+    <label
+      >Conta ou cartão<select
+        #account
+        [value]="filters().account_id ?? ''"
+        (change)="setAccount(account.value)"
+      >
+        <option value="">Todas as contas</option>
+        @for (item of accounts.value(); track item.id) {
+          <option [value]="item.id">{{ item.name ?? 'Conta sem nome' }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Categoria<select
+        #category
+        [value]="filters().category_id ?? ''"
+        (change)="setCategory(category.value)"
+      >
+        <option value="">Todas as categorias</option>
+        @for (item of categories.value(); track item.id) {
+          <option [value]="item.id">{{ item.name }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Meio de pagamento<select
+        #payment
+        [value]="filters().payment_method ?? ''"
+        (change)="setPaymentMethod(payment.value)"
+      >
+        <option value="">Todos</option>
+        <option value="PIX">PIX</option>
+        <option value="TED">TED</option>
+        <option value="DOC">DOC</option>
+        <option value="BOLETO">Boleto</option>
+      </select></label
+    >
+  </div>
+</section>
+
+<section class="transactions-table-card">
+  <header class="table-header">
+    <div>
+      <h2>Lançamentos</h2>
+      <p class="muted">Ordenados da data mais recente para a mais antiga.</p>
+    </div>
+    <span class="page-indicator">Página {{ currentPage() }}</span>
+  </header>
+  @if (page.isLoading()) {
+    <p class="loading-state">Carregando transações...</p>
+  } @else if (page.error()) {
+    <p class="error-state">Não foi possível carregar as transações.</p>
+  } @else if (page.value(); as result) {
+    @if (selectedIds().size > 0) {
+      <div class="bulk-actions" role="status">
+        <strong>{{ selectedIds().size }} selecionada(s)</strong>
+        <div>
+          <button type="button" class="clear-selection" (click)="clearSelection()">
+            Limpar seleção
+          </button>
+          <button type="button" class="btn-primary" (click)="bulkModalOpen.set(true)">
+            Classificar em lote
+          </button>
+        </div>
+      </div>
+    }
+    <div class="transaction-columns" aria-hidden="true">
+      <input
+        type="checkbox"
+        aria-label="Selecionar todas as transações desta página"
+        [checked]="allPageSelected()"
+        (change)="togglePage(selectPage.checked)"
+        #selectPage
+      />
+      <span>Data</span><span>Descrição</span><span>Categoria</span><span>Conta ou cartão</span
+      ><span class="amount-column">Valor</span><span></span>
+    </div>
+    <div class="transaction-list">
+      @for (transaction of result.items; track transaction.id) {
+        <article class="transaction-row" [class.is-selected]="selectedIds().has(transaction.id)">
+          <input
+            type="checkbox"
+            [attr.aria-label]="'Selecionar ' + transaction.description"
+            [checked]="selectedIds().has(transaction.id)"
+            (change)="toggleTransaction(transaction.id, selection.checked)"
+            #selection
+          />
+          <time>{{ transaction.accrual_date | date: 'dd/MM/yyyy' }}</time>
+          <div class="transaction-description">
+            <strong>{{ transaction.description }}</strong>
+            <div class="transaction-badges">
+              <span class="badge badge-kind">{{
+                transaction.payment_method | paymentMethodLabel
+              }}</span>
+              @if (hasManualOverride(transaction)) {
+                <span class="manual-badge">Ajuste manual</span>
+              }
+              @if (transaction.is_internal_transfer) {
+                <span class="flag-badge">Transferência interna</span>
+              }
+              @if (transaction.is_card_payment) {
+                <span class="flag-badge">Pagamento de fatura</span>
+              }
+              @if (transaction.exclude_from_analysis) {
+                <span class="flag-badge">Fora das análises</span>
+              }
+            </div>
+          </div>
+          <span class="category-name">{{ transaction.category_name ?? 'Sem categoria' }}</span
+          ><span class="account-name">{{ transaction.account_name ?? 'Conta sem nome' }}</span
+          ><strong class="transaction-amount" [class]="amountClass(transaction.direction)"
+            >{{ transaction.direction === 'IN' ? '+' : '−' }}
+            {{ +transaction.amount_abs | currency: 'BRL' }}</strong
+          ><button
+            type="button"
+            class="classify-button"
+            (click)="selectedTransaction.set(transaction)"
+          >
+            Classificar
+          </button>
+        </article>
+      } @empty {
+        <div class="transactions-empty-state">
+          <div class="empty-icon">⌁</div>
+          <h3>Nenhuma transação encontrada</h3>
+          <p>Altere os filtros ou aguarde uma nova sincronização.</p>
+        </div>
+      }
+    </div>
+    <footer class="pagination">
+      <button
+        type="button"
+        class="btn-secondary"
+        [disabled]="!previousCursors().length"
+        (click)="previousPage()"
+      >
+        Anterior</button
+      ><button
+        type="button"
+        class="btn-primary"
+        [disabled]="!result.next_cursor"
+        (click)="nextPage()"
+      >
+        Próxima página
+      </button>
+    </footer>
+  }
+</section>
+
+@if (selectedTransaction(); as transaction) {
+  <app-transaction-classification
+    [transaction]="transaction"
+    [categories]="categories.value() ?? []"
+    (cancelled)="selectedTransaction.set(null)"
+    (saved)="classificationSaved()"
+  />
+}
+
+@if (bulkModalOpen()) {
+  <app-transaction-bulk-classification
+    [transactionIds]="selectedIdList()"
+    [categories]="categories.value() ?? []"
+    (cancelled)="bulkModalOpen.set(false)"
+    (saved)="bulkClassificationSaved()"
+  />
+}

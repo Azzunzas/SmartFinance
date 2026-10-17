@@ -1,0 +1,140 @@
+.modal-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 72%);
+}
+
+.classification-modal {
+  width: min(100%, 34rem);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.85rem;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%);
+}
+
+.classification-modal header,
+.classification-modal footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.classification-modal header {
+  margin-bottom: 1.5rem;
+}
+
+.classification-modal h2,
+.classification-modal p {
+  margin: 0;
+}
+
+.classification-modal h2 {
+  margin-top: 0.25rem;
+  font-size: 1.15rem;
+}
+
+.modal-close {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.classification-modal form,
+.classification-modal label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.classification-modal form {
+  gap: 1rem;
+}
+
+.classification-origin {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  font-size: 0.78rem;
+}
+
+.classification-origin p {
+  color: var(--color-text-muted);
+}
+
+.classification-origin span {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--color-warning);
+}
+
+.classification-origin button {
+  margin-left: 0.4rem;
+  padding: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  text-decoration: underline;
+}
+
+.classification-modal label,
+.classification-modal legend {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.classification-modal select,
+.classification-modal textarea {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.classification-modal fieldset {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+}
+
+.classification-modal .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--color-text);
+  font-weight: 400;
+}
+
+.classification-modal footer {
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.classification-modal button {
+  border: 0;
+  cursor: pointer;
+}
+
+.modal-error {
+  color: var(--color-negative);
+  font-size: 0.85rem;
+}

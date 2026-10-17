@@ -1,0 +1,279 @@
+.overview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.overview-header h1 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+  letter-spacing: -0.04em;
+}
+
+.overview-header p {
+  margin: 0;
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sync-control {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sync-history {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.sync-history h2,
+.sync-history p {
+  margin: 0;
+}
+
+.sync-history p {
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.summary-card {
+  min-height: 10.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-card .card-total {
+  margin-top: auto;
+  margin-bottom: 0.4rem;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  letter-spacing: -0.04em;
+}
+
+.summary-card .card-subtext {
+  margin: 0;
+}
+
+.net-worth-card {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)),
+    var(--color-surface)
+  );
+}
+
+.financial-health {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0 1rem;
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  border-radius: 0.75rem;
+}
+
+.health-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  flex: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  color: var(--color-accent);
+  font-weight: 800;
+}
+
+.financial-health h2,
+.financial-health p {
+  margin: 0;
+}
+
+.financial-health h2 {
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.insight-card {
+  min-height: 22rem;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.insight-card h2,
+.insight-card p,
+.recent-transactions h2 {
+  margin: 0;
+}
+
+.insight-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.insight-header h2 {
+  margin-bottom: 0.25rem;
+  color: var(--color-text);
+  font-size: 1rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.insight-header p,
+.history-period {
+  font-size: 0.78rem;
+}
+
+.insight-header input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.45rem;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font: inherit;
+}
+
+.insight-chart {
+  height: 18rem;
+}
+
+.empty-state {
+  display: grid;
+  min-height: 15rem;
+  place-items: center;
+  text-align: center;
+}
+
+.net-worth-header {
+  margin-top: 0;
+}
+
+.history-card {
+  margin-bottom: 2rem;
+}
+
+.history-chart {
+  height: 18rem;
+}
+
+.section-header .section-title {
+  margin: 0;
+}
+
+.period-toggle {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.period-toggle button {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.period-toggle button.active {
+  background: var(--color-surface-active);
+  color: var(--color-text);
+}
+
+.commitments-card {
+  margin-bottom: 2rem;
+}
+
+.chart {
+  height: 300px;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alert {
+  border: 1px solid var(--color-warning);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+
+.alert p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.attention-title {
+  margin-top: 0;
+}
+
+.recent-transactions {
+  margin-top: 2rem;
+}
+
+.loading-state,
+.error-state {
+  padding: 1rem 0;
+  color: var(--color-text-muted);
+}
+
+.error-state {
+  color: var(--color-negative);
+}
+
+@media (max-width: 1050px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .overview-header,
+  .section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summary-grid,
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    min-height: 8.5rem;
+  }
+}

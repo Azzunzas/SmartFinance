@@ -1,0 +1,35 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="setup-title">
+    <div class="auth-brand" aria-hidden="true">S</div>
+    <p class="auth-eyebrow">Primeiro acesso</p>
+    <h1 id="setup-title">Proteja seus dados</h1>
+    <p class="auth-description">
+      Defina o único acesso deste SmartFinance. Esta etapa só pode ser concluída uma vez.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Usuário
+        <input type="text" formControlName="username" autocomplete="username" autofocus />
+      </label>
+      <label>
+        Senha
+        <input type="password" formControlName="password" autocomplete="new-password" />
+        <small>Use pelo menos 8 caracteres.</small>
+      </label>
+
+      @if (form.controls.password.touched && form.controls.password.hasError('minlength')) {
+        <p class="auth-error" role="alert">A senha precisa ter pelo menos 8 caracteres.</p>
+      }
+      @if (errorMessage()) {
+        <p class="auth-error" role="alert">{{ errorMessage() }}</p>
+      }
+
+      <button type="submit" class="auth-submit" [disabled]="submitting() || alreadyConfigured()">
+        {{ submitting() ? 'Criando acesso…' : 'Criar acesso' }}
+      </button>
+    </form>
+
+    <p class="auth-secondary"><a routerLink="/login">Voltar para o login</a></p>
+  </section>
+</main>

@@ -1,0 +1,442 @@
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+  color-scheme: dark;
+
+  --color-bg: #0a0a0c;
+  --color-surface: #141416;
+  --color-surface-active: #1f1f23;
+  --color-border: #26262b;
+
+  --color-text: #f4f4f5;
+  --color-text-muted: #9a9aa2;
+
+  --color-accent: #60a5fa;
+  --color-positive: #34d399;
+  --color-negative: #f87171;
+  --color-warning: #eab308;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: inherit;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0 0 1.5rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.item-card {
+  display: block;
+  text-decoration: none;
+}
+
+.item-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.item-card:hover {
+  border-color: var(--color-text-muted);
+}
+
+.badge-kind {
+  background: color-mix(in srgb, var(--color-text-muted) 18%, transparent);
+  color: var(--color-text-muted);
+}
+
+.manual-badge {
+  padding: 0.18rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border-radius: 999px;
+  color: var(--color-accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.title-with-help {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chart-help {
+  position: relative;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: help;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.chart-help::after {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  bottom: calc(100% + 0.5rem);
+  width: min(17rem, 70vw);
+  padding: 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.45rem;
+  background: var(--color-surface-active);
+  color: var(--color-text);
+  content: attr(data-tooltip);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(-50%, 0.25rem);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.chart-help:hover::after,
+.chart-help:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+app-overview .sync-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 10rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface-active);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+app-overview .sync-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: sync-spin 700ms linear infinite;
+}
+
+app-overview .latest-sync,
+app-overview .sync-history li {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.72rem;
+}
+
+app-overview .latest-sync span,
+app-overview .sync-history li span {
+  color: var(--color-text-muted);
+}
+
+app-overview .latest-sync .sync-note,
+app-overview .sync-history li .sync-note {
+  max-width: 28rem;
+  color: var(--color-warning);
+}
+
+app-overview .latest-sync button {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+app-overview .sync-history .sync-details {
+  width: 100%;
+  display: flex;
+  gap: 1rem;
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--color-border);
+  list-style: none;
+}
+
+app-overview .health-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: none;
+  padding-top: 1.2rem;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+app-overview .health-score strong {
+  font-size: 1.35rem;
+}
+app-overview .health-score span {
+  font-size: 0.7rem;
+}
+app-overview .health-good {
+  color: var(--color-positive);
+}
+app-overview .health-warning {
+  color: var(--color-warning);
+}
+app-overview .health-critical {
+  color: var(--color-negative);
+}
+app-overview .health-content {
+  width: 100%;
+}
+
+app-overview .health-meter {
+  height: 0.4rem;
+  margin: 0.65rem 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+app-overview .health-meter span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+app-overview .health-factors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+app-overview .recent-transactions header,
+app-overview .recent-transactions article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+app-overview .recent-transactions h2,
+app-overview .recent-transactions p {
+  margin: 0;
+}
+app-overview .recent-transactions header a {
+  color: var(--color-accent);
+  font-size: 0.8rem;
+}
+app-overview .recent-list {
+  margin-top: 0.75rem;
+}
+
+app-overview .recent-transactions article {
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.82rem;
+}
+
+app-overview .recent-transactions article time,
+app-overview .recent-transactions article span {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+}
+
+app-overview .recent-transactions article div {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+}
+
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  app-overview .sync-history .sync-details,
+  app-overview .health-factors {
+    flex-direction: column;
+  }
+}
+
+.btn-primary {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-accent);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn-danger {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--color-negative);
+  color: var(--color-negative);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.card-total {
+  margin: 0 0 0.75rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.card-subtext {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.card-empty {
+  border-style: dashed;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-empty p {
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.badge-debt {
+  background: color-mix(in srgb, var(--color-negative) 18%, transparent);
+  color: var(--color-negative);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.positive {
+  color: var(--color-positive);
+}
+
+.negative {
+  color: var(--color-negative);
+}
+
+.transaction-row.is-selected {
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+}
+
+.transaction-row > input,
+.transaction-columns > input {
+  accent-color: var(--color-accent);
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  font-size: 0.85rem;
+}
+
+.bulk-actions div {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.clear-selection {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+@media (max-width: 560px) {
+  .bulk-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+}

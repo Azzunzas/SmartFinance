@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "smartfinance"
+version = "0.1.0"
+description = "Análise de saúde financeira pessoal sobre dados da API Pluggy"
+requires-python = ">=3.14"
+dependencies = [
+    "sqlalchemy>=2.0,<3.0",
+    "psycopg[binary]>=3.1,<4.0",
+    "alembic>=1.13,<2.0",
+    "pydantic>=2.7,<3.0",
+    "httpx>=0.27,<1.0",
+    "fastapi>=0.115,<1.0",
+    "uvicorn>=0.30,<1.0",
+    "argon2-cffi>=23.1,<24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "httpx2>=2.10,<3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["core", "jobs", "api"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Depends(...) como default de argumento é o padrão documentado do FastAPI —
+# não é o "mutable default" que a B008 existe pra pegar.
+"api/routers/*.py" = ["B008"]
+"api/deps.py" = ["B008"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

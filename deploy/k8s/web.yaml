@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartfinance-web
+spec:
+  # O front é estático; escalar aqui seria seguro, mas não há gargalo medido
+  # (docs/regras-do-projeto.md §4) e é um usuário só.
+  replicas: 1
+  selector:
+    matchLabels: { app: smartfinance-web }
+  template:
+    metadata:
+      labels: { app: smartfinance-web }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+      containers:
+        - name: web
+          # Registry local em localhost:5000 (container `sf-registry`). O containerd
+          # do k3s aceita HTTP em localhost sem configuração extra — verificado.
+          image: localhost:5000/smartfinance-web:dev
+          # Always e não IfNotPresent: a tag `:dev` é mutável, então com
+          # IfNotPresent o k3s reaproveita a imagem já cacheada e um `rollout
+          # restart` sobe código velho sem nenhum erro aparecer — aconteceu em
+          # 2026-08-24, o endpoint novo dava 404 e o módulo novo não existia
+          # dentro do pod. Com tag imutável (:sha ou versão), IfNotPresent
+          # voltaria a ser a escolha certa.
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet: { path: /, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartfinance-web
+spec:
+  selector: { app: smartfinance-web }
+  ports:
+    - port: 80
+      targetPort: 8080

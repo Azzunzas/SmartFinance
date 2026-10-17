@@ -1,0 +1,69 @@
+<a class="back-link" routerLink="/recurrences">← Voltar para recorrências</a>
+
+@if (candidate.value(); as current) {
+  <header class="promote-header">
+    <div>
+      <p class="eyebrow">Promover sugestão</p>
+      <h1>{{ current.description_norm }}</h1>
+      <p class="muted">Transforme esta recorrência detectada em um item do seu orçamento.</p>
+    </div>
+    <span [class]="current.direction === 'IN' ? 'direction-income' : 'direction-expense'">
+      {{ current.direction | directionLabel }}
+    </span>
+  </header>
+
+  <section class="candidate-summary">
+    <div><span>Valor médio</span><strong [class]="current.direction === 'IN' ? 'positive' : 'negative'">{{ +current.avg_amount | currency: 'BRL' }}</strong></div>
+    <div><span>Ocorrências</span><strong>{{ current.occurrences }}</strong></div>
+    <div><span>Intervalo médio</span><strong>{{ current.avg_interval_days }} dias</strong></div>
+  </section>
+
+  <section class="promote-form-card">
+    <header>
+      <h2>Configurar orçamento</h2>
+      <p class="muted">A regra de correspondência será criada automaticamente a partir desta sugestão.</p>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="promote-form">
+      <label>
+        Nome do item de orçamento
+        <input type="text" formControlName="name" placeholder="Ex.: Internet" />
+      </label>
+
+      <label>
+        Vigente a partir de
+        <input type="date" formControlName="valid_from" />
+      </label>
+
+      <label>
+        Tolerância de valor (%)
+        <input type="number" step="0.1" formControlName="tolerance_pct" />
+      </label>
+
+      <label>
+        Dia esperado do mês
+        <input type="number" min="1" max="31" formControlName="expected_day" placeholder="Opcional" />
+      </label>
+
+      <label>
+        Tolerância de dias
+        <input type="number" formControlName="day_tolerance" />
+      </label>
+
+      @if (errorMessage()) {
+        <p class="error">{{ errorMessage() }}</p>
+      }
+
+      <div class="form-actions">
+        <a class="btn-secondary" routerLink="/recurrences">Cancelar</a>
+        <button type="submit" class="btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Promovendo...' : 'Promover para orçamento' }}
+        </button>
+      </div>
+    </form>
+  </section>
+} @else if (candidate.isLoading()) {
+  <p class="loading-state">Carregando sugestão...</p>
+} @else {
+  <p class="error-state">Candidato não encontrado.</p>
+}

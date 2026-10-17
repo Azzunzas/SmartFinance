@@ -1,0 +1,28 @@
+# Tudo entra pelo front. O nginx da imagem web já faz proxy de /api/ pro Service
+# da API (deploy/nginx.conf), então o Ingress tem uma regra só — e é isso que
+# mantém front e API na MESMA ORIGEM. Não é detalhe estético: o cookie de sessão
+# é SameSite=strict, então uma origem separada pra API o mataria.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smartfinance
+  annotations:
+    # k3s já traz o Traefik. Em outro cluster, troque a ingressClassName abaixo.
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  # TODO: trocar pelo seu host. Em k3s local, aponte no /etc/hosts:
+  #   127.0.0.1  smartfinance.local
+  tls:
+    - hosts: [smartfinance.local]
+      secretName: smartfinance-tls
+  rules:
+    - host: smartfinance.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: smartfinance-web
+                port: { number: 80 }

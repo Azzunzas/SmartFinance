@@ -1,0 +1,52 @@
+# ---------------------------------------------------------------------------
+# Segredos — nada aqui pode entrar no histórico. Segredo commitado não sai
+# só apagando o arquivo depois: fica no histórico e precisa ser rotacionado.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+deploy/**/*secret*.y*ml
+!deploy/**/secret.example.yaml
+
+# ---------------------------------------------------------------------------
+# Dados financeiros — um dump do Postgres é o extrato inteiro em texto puro.
+# `pg_dump` é o comando que mais provavelmente vai gerar um arquivo desses na
+# raiz do repo, num backup rápido, sem pensar. Regra ampla de propósito.
+# Se um dia existir um .sql que você QUEIRA versionar (seed manual, por ex.):
+#   git add -f caminho/do/arquivo.sql
+# ---------------------------------------------------------------------------
+*.sql
+*.dump
+*.sqlite
+*.db
+
+# ---------------------------------------------------------------------------
+# Ambiente e dependências — reinstaláveis a partir de pyproject.toml /
+# package-lock.json, que ESSES sim são versionados.
+# ---------------------------------------------------------------------------
+.venv/
+venv/
+node_modules/
+
+# ---------------------------------------------------------------------------
+# Artefatos de build e cache de ferramenta
+# ---------------------------------------------------------------------------
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.angular/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------------------
+# Lixo de sistema operacional e log solto
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.log
