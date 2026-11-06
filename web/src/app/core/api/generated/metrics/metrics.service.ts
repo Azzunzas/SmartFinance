@@ -183,7 +183,8 @@ export class MetricsService {
     );
   }
 /**
- * Doc §6.2: `PENDING` + parcelas projetadas, por mês, a partir de hoje.
+ * Doc §6.2: `PENDING` + parcelas projetadas + faturas fechadas a vencer,
+ * por mês, a partir de hoje.
  * @summary Upcoming
  */
  upcomingApiMetricsUpcomingGet<TData = MonthlyCommitmentOut[]>(params?: UpcomingApiMetricsUpcomingGetParams, options?: HttpClientBodyOptions): Observable<TData>;

@@ -1213,7 +1213,7 @@
           "metrics"
         ],
         "summary": "Upcoming",
-        "description": "Doc \u00a76.2: `PENDING` + parcelas projetadas, por m\u00eas, a partir de hoje.",
+        "description": "Doc \u00a76.2: `PENDING` + parcelas projetadas + faturas fechadas a vencer,\npor m\u00eas, a partir de hoje.",
         "operationId": "upcoming_api_metrics_upcoming_get",
         "parameters": [
           {
@@ -1965,6 +1965,88 @@
         }
       }
     },
+    "/api/bills": {
+      "get": {
+        "tags": [
+          "bills"
+        ],
+        "summary": "List All",
+        "description": "Faturas fechadas de cart\u00e3o, mais recentes primeiro (por vencimento).\n`?account_id=` filtra um cart\u00e3o. Ao contr\u00e1rio de `account.balance` (limite\nusado), `total_amount` \u00e9 o valor que de fato vence.",
+        "operationId": "list_all_api_bills_get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 12,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "smartfinance_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Smartfinance Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BillOut"
+                  },
+                  "title": "Response List All Api Bills Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/categories": {
       "get": {
         "tags": [
@@ -2391,6 +2473,18 @@
             ],
             "title": "Minimum Payment"
           },
+          "installment_credit_used": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installment Credit Used"
+          },
           "is_own": {
             "type": "boolean",
             "title": "Is Own"
@@ -2420,11 +2514,79 @@
           "balance_due_date",
           "balance_close_date",
           "minimum_payment",
+          "installment_credit_used",
           "is_own",
           "include_in_analysis",
           "updated_at"
         ],
         "title": "AccountOut"
+      },
+      "BillOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "close_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Date"
+          },
+          "total_amount": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Amount"
+          },
+          "minimum_payment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Payment"
+          },
+          "finance_charges_total": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Finance Charges Total"
+          },
+          "currency_code": {
+            "type": "string",
+            "title": "Currency Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "due_date",
+          "close_date",
+          "total_amount",
+          "minimum_payment",
+          "finance_charges_total",
+          "currency_code"
+        ],
+        "title": "BillOut"
       },
       "BulkClassifyRequest": {
         "properties": {
@@ -3019,6 +3181,11 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Installments Total"
           },
+          "bills_total": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Bills Total"
+          },
           "total": {
             "type": "string",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -3030,6 +3197,7 @@
           "period",
           "pending_total",
           "installments_total",
+          "bills_total",
           "total"
         ],
         "title": "MonthlyCommitmentOut"

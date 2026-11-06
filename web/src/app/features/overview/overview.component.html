@@ -95,7 +95,7 @@
     <section class="card summary-card">
       <h2>Cartão de crédito</h2>
       <p class="card-total negative">{{ +data.open_credit_card_bill | currency: 'BRL' }}</p>
-      <span class="badge badge-debt">Fatura em aberto</span>
+      <span class="badge badge-debt">Limite usado</span>
       <p class="card-subtext muted">
         {{ creditAccounts().length }}
         {{ creditAccounts().length === 1 ? 'cartão conectado' : 'cartões conectados' }}
@@ -298,6 +298,9 @@
     <p class="card-subtext muted">
       Total comprometido nos próximos {{ months() }} meses
       <strong class="negative">{{ totalCommitted() | currency: 'BRL' }}</strong>
+    </p>
+    <p class="card-subtext muted">
+      Faturas fechadas a vencer, compras pendentes e parcelas futuras.
     </p>
   } @else {
     <p class="muted">Nenhum compromisso futuro encontrado.</p>
