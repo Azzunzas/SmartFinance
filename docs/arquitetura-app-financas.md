@@ -402,11 +402,23 @@ A API de Recurring Payments da Pluggy é recurso premium fora do trial. Os crit�
 
 Agrupe por `description_norm` + `direction`, calcule intervalo médio e desvio, e gere `regularity_score` = média ponderada entre consistência de intervalo e de valor. Resultado vira `recurrence_candidate`, que você promove manualmente a `planned_item` no frontend. **O detector sugere; você decide.**
 
-### 4.6 Faturas de cartão (Bills) — recurso da Pluggy ainda não usado
+### 4.6 Faturas de cartão (Bills) — `credit_card_bill`
 
-A Pluggy expõe `GET /bills`: uma entidade própria de fatura de cartão de crédito (conta `type=CREDIT`, `subtype=CREDIT_CARD`), com vencimento, valor total, pagamento mínimo, encargos e as parcelas daquele ciclo — obrigatória em conexões Open Finance Regulado, que é o nosso caso (MeuPluggy). **Não é isso que o schema atual usa.** `open_credit_card_bill` (§6.2) é calculado somando `account.balance` das contas `CREDIT`, não lendo essa entidade — funciona pro total em aberto, mas não dá vencimento nem mínimo.
+A Pluggy expõe `GET /bills`: cada fatura **fechada** de um cartão (conta `type=CREDIT`, `subtype=CREDIT_CARD`), com vencimento, fechamento, valor total, pagamento mínimo e encargos (`financeCharges`). Desde 2026-11-06 o sync grava essas faturas em `credit_card_bill` (migration 0018), lendo todas a cada execução — são uma por mês, e o upsert por `pluggy_bill_id` torna a releitura idempotente.
 
-Parte do mesmo dado (`brand`, `balanceDueDate`, `balanceCloseDate`, `minimumPayment`) também vem dentro de `account.creditData`, já mapeado em `PluggyCreditData` (`jobs/pluggy/schemas.py`) desde 2026-08-19. Isso resolve vencimento/mínimo/bandeira por conta sem precisar ingerir a entidade `Bill` separada — só ingira `GET /bills` de verdade se algum dia precisar de detalhe por fatura fechada específica (histórico de faturas passadas, por exemplo), não pro caso de uso atual de "mostrar a fatura em aberto".
+Até então a decisão era usar só `account.creditData`, e ela se mostrou errada no banco real:
+
+- `account.balance` de uma conta CREDIT é o **limite usado**, não a fatura: inclui parcelas futuras e compras adiadas ("pula compra"). No PicPay, R$ 2.803,00 de limite usado contra R$ 2.517,59 de fatura.
+- `creditData.balanceDueDate` ficava defasado: no cartão Free, continuava em 10/10 semanas depois do vencimento.
+
+Por isso `open_credit_card_bill` (§6.2) continua somando `account.balance`, que é a dívida certa para o patrimônio líquido, mas a tela o chama de "limite usado". A fatura que vence vem de `GET /api/bills`, e os compromissos futuros (`/api/metrics/upcoming`) somam as faturas fechadas no mês do vencimento.
+
+Comportamento verificado contra a API em 2026-11-06:
+
+- Valores em reais, não em centavos.
+- Só faturas já fechadas. As compras do ciclo corrente aparecem apenas como transações até o fechamento.
+- `payments` não diz se a fatura foi paga: o PicPay anexa o pagamento à fatura que ele quitou, o Free à seguinte. Por isso uma fatura conta como compromisso até a data do vencimento, mesmo que já tenha sido paga antes.
+- A Pluggy pode trocar o `billId` de provisório para definitivo (changelog de agosto de 2026). Leitura pega uma fatura por cartão por mês de vencimento, a vista mais recentemente.
 
 ### 4.7 Webhooks vs. polling — por que o sync é cron, não evento
 
@@ -419,13 +431,17 @@ A Pluggy recomenda webhooks (`item/updated`, `connector/status_updated`, `transa
 ### Views materializadas (refresh pós-sync)
 
 ```sql
+-- Versão atual: migration 0019. Crédito no cartão (`is_card_credit`) abate
+-- `total_out` em vez de somar em `total_in` (regras do projeto §2, regra 11).
 CREATE MATERIALIZED VIEW mv_monthly_cashflow AS
 SELECT
-    to_char(t.accrual_date, 'YYYY-MM')                             AS period,
-    SUM(t.amount_abs) FILTER (WHERE t.direction = 'IN')            AS total_in,
-    SUM(t.amount_abs) FILTER (WHERE t.direction = 'OUT')           AS total_out,
+    to_char(t.accrual_date, 'YYYY-MM')                                       AS period,
+    COALESCE(SUM(t.amount_abs) FILTER (WHERE t.direction = 'IN'
+                                         AND NOT t.is_card_credit), 0)       AS total_in,
+    COALESCE(SUM(t.amount_abs) FILTER (WHERE t.direction = 'OUT'), 0)
+      - COALESCE(SUM(t.amount_abs) FILTER (WHERE t.is_card_credit), 0)       AS total_out,
     SUM(CASE WHEN t.direction = 'IN'  THEN t.amount_abs
-             ELSE -t.amount_abs END)                               AS net
+             ELSE -t.amount_abs END)                                         AS net
 FROM transaction t
 JOIN account a ON a.id = t.account_id
 LEFT JOIN transaction_classification c ON c.transaction_id = t.id
@@ -482,9 +498,10 @@ repo/
 | GET | `/api/metrics/cashflow?from=&to=` | série de `mv_monthly_cashflow` |
 | GET | `/api/metrics/categories?period=` | quebra por categoria do período |
 | GET | `/api/metrics/planned-vs-actual?period=` | aderência por `planned_item` |
-| GET | `/api/metrics/upcoming?months=6` | `PENDING` + parcelas projetadas |
+| GET | `/api/metrics/upcoming?months=6` | `PENDING` + parcelas projetadas + faturas fechadas a vencer |
 | GET | `/api/metrics/networth?range=12m` | série de patrimônio |
 | GET | `/api/accounts` · `/api/investments?active=true` | listagens de apoio |
+| GET | `/api/bills?account_id=&limit=12` | faturas fechadas de cartão, mais recentes primeiro (§4.6) |
 | GET | `/api/transactions?period=&category=&direction=&cursor=` | listagem paginada por cursor |
 
 **Escrita e classificação**
