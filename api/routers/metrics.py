@@ -17,6 +17,7 @@ from api.schemas.upcoming import MonthlyCommitmentOut
 from core.analysis.health import assess_financial_health
 from core.analysis.upcoming import project_upcoming
 from core.repository.analysis import load_upcoming_transactions
+from core.repository.bills import load_upcoming_bills
 from core.repository.metrics import (
     load_category_spend,
     load_health_inputs,
@@ -38,10 +39,13 @@ def overview(session: Session = Depends(get_session)) -> OverviewOut:
 def upcoming(
     months: int = 6, session: Session = Depends(get_session)
 ) -> list[MonthlyCommitmentOut]:
-    """Doc §6.2: `PENDING` + parcelas projetadas, por mês, a partir de hoje."""
-    transactions = load_upcoming_transactions(session)
+    """Doc §6.2: `PENDING` + parcelas projetadas + faturas fechadas a vencer,
+    por mês, a partir de hoje."""
     commitments = project_upcoming(
-        transactions, reference_date=datetime.now(UTC).date(), months=months
+        load_upcoming_transactions(session),
+        bills=load_upcoming_bills(session),
+        reference_date=datetime.now(UTC).date(),
+        months=months,
     )
     return [MonthlyCommitmentOut.model_validate(c) for c in commitments]
 

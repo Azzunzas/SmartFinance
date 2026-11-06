@@ -7,11 +7,18 @@ from sqlalchemy.orm import Session
 from core.models import SyncCursor, SyncRun
 from core.redaction import redact_identifiers
 from core.repository.accounts import upsert_account
+from core.repository.bills import upsert_bill
 from core.repository.connections import upsert_connection
 from core.repository.investments import capture_investment_snapshot, upsert_investment
 from core.repository.transactions import upsert_transaction
 from jobs.pluggy.client import PluggyClient
-from jobs.sync.mapping import map_account, map_connection, map_investment, map_transaction
+from jobs.sync.mapping import (
+    map_account,
+    map_bill,
+    map_connection,
+    map_investment,
+    map_transaction,
+)
 
 # Toda execução relê as transações dos últimos N dias por `dateFrom`, além do
 # incremental por `createdAtFrom`. Motivo (verificado contra a API em
@@ -31,6 +38,7 @@ class SyncResult:
     tx_updated: int
     tx_duplicates: int
     investments_synced: int
+    bills_synced: int
 
 
 def sync_item(
@@ -46,7 +54,7 @@ def sync_item(
     session.add(sync_run)
     session.flush()
 
-    accounts_synced = investments_synced = 0
+    accounts_synced = investments_synced = bills_synced = 0
     tx_inserted = tx_updated = tx_duplicates = 0
 
     try:
@@ -112,6 +120,14 @@ def sync_item(
 
             _write_cursor(session, account_id, started_at)
 
+            # Fatura só existe pra cartão. A Pluggy devolve todas as faturas
+            # fechadas a cada chamada (são poucas, uma por mês), então não há
+            # cursor: o upsert por `pluggy_bill_id` torna a releitura idempotente.
+            if account.type == "CREDIT":
+                for pluggy_bill in client.list_bills(pluggy_account.id):
+                    upsert_bill(session, map_bill(pluggy_bill, account_id=account_id))
+                    bills_synced += 1
+
         sync_run.status = "SUCCESS"
     except Exception as exc:
         sync_run.status = "FAILED"
@@ -132,6 +148,7 @@ def sync_item(
         tx_updated=tx_updated,
         tx_duplicates=tx_duplicates,
         investments_synced=investments_synced,
+        bills_synced=bills_synced,
     )
 
 

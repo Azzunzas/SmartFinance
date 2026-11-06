@@ -6,7 +6,14 @@ import httpx
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from core.models import Investment, InvestmentSnapshot, SyncRun, Transaction
+from core.models import (
+    Account,
+    CreditCardBill,
+    Investment,
+    InvestmentSnapshot,
+    SyncRun,
+    Transaction,
+)
 from core.models.transaction import TxStatus
 from jobs.pluggy.client import PluggyClient
 from jobs.sync.run import sync_item
@@ -269,3 +276,153 @@ def test_full_sync_ignores_the_cursor(db_session: Session) -> None:
     assert not any("createdAtFrom" in p for p in pedidos), (
         "sync FULL não pode usar o cursor incremental"
     )
+
+
+CARD_ACCOUNT_ID = "22222222-2222-2222-2222-222222222299"
+BILL_ID = "44444444-4444-4444-4444-444444444441"
+TX_CARD_PAYMENT_ID = "33333333-3333-3333-3333-333333333351"
+
+
+def _credit_card_handler(request: httpx.Request) -> httpx.Response:
+    if request.url.path == "/accounts":
+        return httpx.Response(
+            200,
+            json={
+                "page": 1,
+                "total": 1,
+                "totalPages": 1,
+                "results": [
+                    {
+                        "id": CARD_ACCOUNT_ID,
+                        "itemId": ITEM_ID,
+                        "type": "CREDIT",
+                        "subtype": "CREDIT_CARD",
+                        "number": "1029",
+                        "name": "Cartão",
+                        "currencyCode": "BRL",
+                        "balance": "2803.00",
+                        "creditData": {
+                            "creditLimit": "2793",
+                            "availableCreditLimit": "-10",
+                            "disaggregatedCreditLimits": [
+                                {"lineName": "SAQUE_CREDITO_BRASIL", "usedAmount": 0},
+                                {"lineName": "CREDITO_PARCELADO", "usedAmount": 284.79},
+                            ],
+                        },
+                    }
+                ],
+            },
+        )
+    if request.url.path == "/bills":
+        assert request.url.params["accountId"] == CARD_ACCOUNT_ID
+        bill = {
+            "id": BILL_ID,
+            "dueDate": "2026-11-10T00:00:00.000Z",
+            "billClosingDate": "2026-11-04T00:00:00.000Z",
+            "totalAmount": 2517.59,
+            "totalAmountCurrencyCode": "BRL",
+            "minimumPaymentAmount": 125.88,
+            "financeCharges": [
+                {
+                    "id": "c1",
+                    "type": "LATE_PAYMENT_INTEREST",
+                    "amount": 1.66,
+                    "currencyCode": "BRL",
+                },
+                {"id": "c2", "type": "IOF", "amount": 0.35, "currencyCode": "BRL"},
+            ],
+            "payments": [],
+        }
+        page = {"page": 1, "total": 1, "totalPages": 1, "results": [bill]}
+        return httpx.Response(200, json=page)
+    if request.url.path == "/v2/transactions":
+        payment = {
+            "id": TX_CARD_PAYMENT_ID,
+            "accountId": CARD_ACCOUNT_ID,
+            "date": "2026-10-09T00:00:00Z",
+            "description": "PAGAMENTO DE FATURA",
+            "type": "CREDIT",
+            "amount": "-2382.91",
+            "currencyCode": "BRL",
+            "category": "Transfers",
+            "status": "POSTED",
+            "operationType": "PAGAMENTO_FATURA",
+        }
+        return httpx.Response(200, json={"results": [payment], "next": None})
+    return _handler(request)
+
+
+def test_sync_item_upserts_credit_card_bills(db_session: Session) -> None:
+    client = _pluggy_client(_credit_card_handler)
+
+    first = sync_item(db_session, client, ITEM_ID, kind="FULL")
+    assert first.bills_synced == 1
+
+    bill = db_session.execute(
+        select(CreditCardBill).where(CreditCardBill.pluggy_bill_id == BILL_ID)
+    ).scalar_one()
+    assert bill.total_amount == Decimal("2517.59")
+    assert bill.minimum_payment == Decimal("125.88")
+    assert bill.finance_charges_total == Decimal("2.01")
+    assert str(bill.due_date) == "2026-11-10"
+    assert str(bill.close_date) == "2026-11-04"
+    assert bill.raw["payments"] == []
+
+    # Releitura não duplica: a Pluggy devolve todas as faturas a cada chamada.
+    sync_item(db_session, client, ITEM_ID, kind="INCREMENTAL")
+    assert (
+        db_session.execute(
+            select(func.count())
+            .select_from(CreditCardBill)
+            .where(CreditCardBill.pluggy_bill_id == BILL_ID)
+        ).scalar_one()
+        == 1
+    )
+
+
+def test_operation_type_is_generated_from_raw(db_session: Session) -> None:
+    """O sync não escreve `operation_type`: o Postgres deriva do `raw`. Isso é
+    o que garante que transações antigas e as gravadas por um sync que não
+    conhece a coluna também tenham o valor."""
+    client = _pluggy_client(_credit_card_handler)
+    sync_item(db_session, client, ITEM_ID, kind="FULL")
+
+    row = db_session.execute(
+        select(Transaction).where(Transaction.pluggy_transaction_id == TX_CARD_PAYMENT_ID)
+    ).scalar_one()
+    db_session.refresh(row)
+    assert row.operation_type == "PAGAMENTO_FATURA"
+
+
+def test_sync_item_marks_card_credits_and_reads_installment_credit(db_session: Session) -> None:
+    client = _pluggy_client(_credit_card_handler)
+    sync_item(db_session, client, ITEM_ID, kind="FULL")
+
+    payment = db_session.execute(
+        select(Transaction).where(Transaction.pluggy_transaction_id == TX_CARD_PAYMENT_ID)
+    ).scalar_one()
+    assert payment.is_card_credit is True
+
+    card = db_session.execute(
+        select(Account).where(Account.pluggy_account_id == CARD_ACCOUNT_ID)
+    ).scalar_one()
+    assert card.installment_credit_used == Decimal("284.79")
+
+
+def test_bank_account_has_no_card_credit_or_installment_line(db_session: Session) -> None:
+    client = _pluggy_client(_handler)
+    sync_item(db_session, client, ITEM_ID, kind="FULL")
+
+    rows = (
+        db_session.execute(
+            select(Transaction).where(Transaction.pluggy_transaction_id.in_([TX1_ID, TX2_ID]))
+        )
+        .scalars()
+        .all()
+    )
+    assert rows and not any(row.is_card_credit for row in rows)
+
+    account = db_session.execute(
+        select(Account).where(Account.pluggy_account_id == ACCOUNT_ID)
+    ).scalar_one()
+    assert account.installment_credit_used is None

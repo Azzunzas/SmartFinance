@@ -67,7 +67,7 @@ def main() -> int:
 
     print(
         f"sync_run={result.sync_run_id} contas={result.accounts_synced} "
-        f"investimentos={result.investments_synced} "
+        f"investimentos={result.investments_synced} faturas={result.bills_synced} "
         f"inseridas={result.tx_inserted} atualizadas={result.tx_updated} "
         f"duplicadas={result.tx_duplicates}"
     )

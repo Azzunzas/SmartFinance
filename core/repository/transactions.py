@@ -35,6 +35,7 @@ class TransactionUpsert:
     amount: Decimal
     amount_abs: Decimal
     direction: Direction
+    is_card_credit: bool
     currency_code: str
     date: dt.date
     occurred_at: dt.datetime

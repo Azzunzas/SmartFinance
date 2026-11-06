@@ -7,6 +7,7 @@ from core.ingestion.normalize import (
     mask_account_number,
     normalize_description,
     resolve_accrual_date,
+    resolve_card_credit,
     resolve_direction,
 )
 from core.models.transaction import Direction
@@ -134,3 +135,9 @@ def test_transaction_fingerprint_ignores_timezone_representation() -> None:
     assert compute_transaction_fingerprint("abc", utc, *args) == compute_transaction_fingerprint(
         "abc", brasilia, *args
     )
+
+
+def test_resolve_card_credit_only_for_money_coming_into_a_card() -> None:
+    assert resolve_card_credit("CREDIT", Direction.IN) is True
+    assert resolve_card_credit("CREDIT", Direction.OUT) is False
+    assert resolve_card_credit("BANK", Direction.IN) is False

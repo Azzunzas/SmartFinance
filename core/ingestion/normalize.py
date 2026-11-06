@@ -45,6 +45,17 @@ def resolve_direction(account_type: str, amount: Decimal) -> Direction:
     return Direction.OUT if is_negative != is_credit_account else Direction.IN
 
 
+def resolve_card_credit(account_type: str, direction: Direction) -> bool:
+    """Crédito lançado na conta do cartão: pagamento de fatura, estorno,
+    "pula compra", cashback. Resolvido aqui, uma vez, pelo mesmo motivo de
+    `resolve_direction` (regra de domínio 9): a view de fluxo de caixa precisa
+    dele e não pode decidir por `account.type`.
+
+    O que sobra depois das exclusões de pagamento de fatura e transferência
+    interna abate gasto, nunca é receita (regra 11, migration 0019)."""
+    return account_type == "CREDIT" and direction is Direction.IN
+
+
 def _subtract_months(reference: date, months: int) -> date:
     month_index = reference.month - 1 - months
     year = reference.year + month_index // 12

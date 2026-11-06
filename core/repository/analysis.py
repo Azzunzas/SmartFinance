@@ -22,6 +22,7 @@ class TransactionForAnalysis:
     date: date
     amount_abs: Decimal
     direction: Direction
+    operation_type: str | None
 
 
 def load_transactions_for_analysis(session: Session) -> list[TransactionForAnalysis]:
@@ -40,6 +41,7 @@ def load_transactions_for_analysis(session: Session) -> list[TransactionForAnaly
             Transaction.date,
             Transaction.amount_abs,
             Transaction.direction,
+            Transaction.operation_type,
         ).join(Account, Account.id == Transaction.account_id)
     ).all()
     return [
@@ -53,6 +55,7 @@ def load_transactions_for_analysis(session: Session) -> list[TransactionForAnaly
             date=row.date,
             amount_abs=row.amount_abs,
             direction=row.direction,
+            operation_type=row.operation_type,
         )
         for row in rows
     ]
@@ -67,7 +70,12 @@ def load_matchable_transactions(session: Session) -> list[MatchableTransaction]:
     POSTED, conta incluída na análise, sem transferência interna, sem
     pagamento de fatura, sem exclusão manual. Compartilhado pelo matching de
     `planned_item` (preview e recompute) e pelo detector de recorrência —
-    os três precisam do mesmo pool de "isso é gasto de verdade"."""
+    os três precisam do mesmo pool de "isso é gasto de verdade".
+
+    Crédito no cartão (`is_card_credit`: estorno, "pula compra") fica de fora:
+    não é receita (regra de domínio 11), e casá-lo com um `planned_item` de
+    renda ou detectá-lo como receita recorrente seria o mesmo erro que a
+    migration 0019 corrigiu na view."""
     rows = session.execute(
         sa.select(
             Transaction.id,
@@ -90,6 +98,7 @@ def load_matchable_transactions(session: Session) -> list[MatchableTransaction]:
             sa.func.coalesce(TransactionClassification.is_internal_transfer, False).is_(False),
             sa.func.coalesce(TransactionClassification.is_card_payment, False).is_(False),
             sa.func.coalesce(TransactionClassification.exclude_from_analysis, False).is_(False),
+            Transaction.is_card_credit.is_(False),
         )
     ).all()
     return [

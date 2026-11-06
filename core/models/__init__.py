@@ -1,6 +1,7 @@
 from core.models.account import Account, BalanceSnapshot
 from core.models.auth import AppSession, AppUser
 from core.models.base import Base
+from core.models.bill import CreditCardBill
 from core.models.category import Category, CategoryMapping
 from core.models.classification import TransactionClassification
 from core.models.connection import Connection
@@ -19,6 +20,7 @@ __all__ = [
     "Category",
     "CategoryMapping",
     "Connection",
+    "CreditCardBill",
     "Direction",
     "Investment",
     "InvestmentSnapshot",

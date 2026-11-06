@@ -56,6 +56,7 @@ def _tx(
         amount=amount,
         amount_abs=abs(amount),
         direction=Direction.OUT,
+        is_card_credit=False,
         currency_code="BRL",
         date=date(2026, 1, 5),
         occurred_at=occurred_at or datetime(2026, 1, 5, 10, 0, tzinfo=UTC),
