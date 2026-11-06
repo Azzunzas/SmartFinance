@@ -63,6 +63,10 @@ class Transaction(Base):
     amount: Mapped[Decimal] = mapped_column(sa.Numeric(14, 2))
     amount_abs: Mapped[Decimal] = mapped_column(sa.Numeric(14, 2))
     direction: Mapped[Direction] = mapped_column(_tx_direction)
+    # Crédito na conta do cartão (IN em conta CREDIT), resolvido na ingestão
+    # por `resolve_card_credit`. Abate gasto em vez de contar como receita
+    # (regra de domínio 11, migration 0019).
+    is_card_credit: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.false())
     currency_code: Mapped[str] = mapped_column(sa.CHAR(3), server_default="BRL")
 
     date: Mapped[dt.date] = mapped_column(sa.Date)
@@ -80,6 +84,12 @@ class Transaction(Base):
 
     pluggy_category: Mapped[str | None] = mapped_column(sa.Text)
     payment_method: Mapped[str | None] = mapped_column(sa.Text)
+    # Tipo de operação informado pela instituição (Open Finance), ex.:
+    # `PAGAMENTO_FATURA`. Gerada a partir do `raw` pelo Postgres — o sync não
+    # escreve aqui; `Computed` exclui a coluna de todo INSERT/UPDATE. Ver 0018.
+    operation_type: Mapped[str | None] = mapped_column(
+        sa.Text, sa.Computed("raw ->> 'operationType'", persisted=True)
+    )
     balance_after: Mapped[Decimal | None] = mapped_column(sa.Numeric(14, 2))
 
     first_seen_at: Mapped[dt.datetime] = mapped_column(

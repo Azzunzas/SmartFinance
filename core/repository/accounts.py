@@ -24,6 +24,7 @@ _UPDATABLE_FIELDS = (
     "balance_due_date",
     "balance_close_date",
     "minimum_payment",
+    "installment_credit_used",
     "raw",
 )
 """O que o sync pode reescrever numa conta que já existe.
@@ -53,6 +54,7 @@ class AccountUpsert:
     balance_due_date: date | None
     balance_close_date: date | None
     minimum_payment: Decimal | None
+    installment_credit_used: Decimal | None
     raw: dict[str, Any]
 
 
@@ -111,6 +113,7 @@ class AccountRecord:
     balance_due_date: date | None
     balance_close_date: date | None
     minimum_payment: Decimal | None
+    installment_credit_used: Decimal | None
     is_own: bool
     include_in_analysis: bool
     updated_at: datetime
@@ -137,6 +140,7 @@ def list_accounts(session: Session, *, account_type: str | None = None) -> list[
             balance_due_date=row.balance_due_date,
             balance_close_date=row.balance_close_date,
             minimum_payment=row.minimum_payment,
+            installment_credit_used=row.installment_credit_used,
             is_own=row.is_own,
             include_in_analysis=row.include_in_analysis,
             updated_at=row.updated_at,

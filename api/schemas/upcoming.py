@@ -9,4 +9,5 @@ class MonthlyCommitmentOut(BaseModel):
     period: str
     pending_total: Decimal
     installments_total: Decimal
+    bills_total: Decimal
     total: Decimal

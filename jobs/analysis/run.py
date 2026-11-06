@@ -78,7 +78,7 @@ def run_analysis(session: Session) -> AnalysisResult:
                 transaction_id=t.transaction_id,
                 category_id=category.category_id if category else None,
                 is_internal_transfer=t.transaction_id in transfer_partner,
-                is_card_payment=is_card_payment(category, t.description_norm),
+                is_card_payment=is_card_payment(category, t.description_norm, t.operation_type),
                 counterpart_tx_id=transfer_partner.get(t.transaction_id),
             ),
         )

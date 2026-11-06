@@ -30,6 +30,9 @@ class Account(Base):
     balance_due_date: Mapped[date | None] = mapped_column(sa.Date)
     balance_close_date: Mapped[date | None] = mapped_column(sa.Date)
     minimum_payment: Mapped[Decimal | None] = mapped_column(sa.Numeric(14, 2))
+    # Parte do limite em `CREDITO_PARCELADO` (compras parceladas, "pula
+    # compra") — volta em faturas futuras. Ver migration 0019.
+    installment_credit_used: Mapped[Decimal | None] = mapped_column(sa.Numeric(14, 2))
     is_own: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.true())
     include_in_analysis: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.true())
     created_at: Mapped[datetime] = mapped_column(

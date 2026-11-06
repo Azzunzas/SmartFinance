@@ -41,6 +41,7 @@ def _card(connection_id: int, *, balance: Decimal, number_masked: str = "1029") 
         balance_due_date=None,
         balance_close_date=None,
         minimum_payment=None,
+        installment_credit_used=None,
         raw={},
     )
 

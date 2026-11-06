@@ -39,6 +39,14 @@ class PluggyItem(PluggyModel):
     consent_expires_at: datetime | None = None
 
 
+class PluggyCreditLine(PluggyModel):
+    """Item de `creditData.disaggregatedCreditLimits`: o limite do cartão
+    quebrado por linha (`LIMITE_CREDITO_TOTAL`, `CREDITO_PARCELADO`, saque...)."""
+
+    line_name: str | None = None
+    used_amount: Decimal | None = None
+
+
 class PluggyCreditData(PluggyModel):
     credit_limit: Decimal | None = None
     available_credit_limit: Decimal | None = None
@@ -46,6 +54,8 @@ class PluggyCreditData(PluggyModel):
     balance_due_date: datetime | None = None
     balance_close_date: datetime | None = None
     minimum_payment: Decimal | None = None
+    # `| None`: a Pluggy pode mandar `null` em vez de omitir a chave.
+    disaggregated_credit_limits: list[PluggyCreditLine] | None = None
 
 
 class PluggyAccount(PluggyModel):
@@ -102,6 +112,38 @@ class PluggyTransaction(PluggyModel):
 class PluggyTransactionPage(PluggyModel):
     results: list[PluggyTransaction]
     next: str | None = None
+
+
+class PluggyBillFinanceCharge(PluggyModel):
+    """`type` é string livre de propósito: a doc lista os valores
+    (LATE_PAYMENT_REMUNERATIVE_INTEREST, LATE_PAYMENT_FEE, LATE_PAYMENT_INTEREST,
+    IOF, OTHER) só na descrição, não como enum fechado."""
+
+    type: str
+    amount: Decimal
+
+
+class PluggyBill(PluggyModel):
+    """Fatura fechada de cartão (`GET /bills`). Valores em reais, não em
+    centavos — conferido contra a API em 2026-11-06 (`totalAmount: 2517.59`).
+    `payments` fica só no `raw`: PicPay anexa o pagamento à fatura que ele
+    quitou, o Free à fatura seguinte (a regra da doc), então o campo não diz
+    de forma confiável se ESTA fatura foi paga."""
+
+    id: UUID
+    due_date: datetime
+    bill_closing_date: datetime | None = None
+    total_amount: Decimal
+    total_amount_currency_code: str | None = None
+    minimum_payment_amount: Decimal | None = None
+    finance_charges: list[PluggyBillFinanceCharge] = []
+
+
+class PluggyBillPage(PluggyModel):
+    results: list[PluggyBill]
+    page: int
+    total: int
+    total_pages: int
 
 
 class PluggyInvestment(PluggyModel):

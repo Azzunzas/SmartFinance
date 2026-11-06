@@ -26,9 +26,23 @@ export interface AccountOut {
   balance_due_date: string | null;
   balance_close_date: string | null;
   minimum_payment: string | null;
+  installment_credit_used: string | null;
   is_own: boolean;
   include_in_analysis: boolean;
   updated_at: string;
+}
+
+export interface BillOut {
+  id: number;
+  account_id: number;
+  due_date: string;
+  close_date: string | null;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
+  total_amount: string;
+  minimum_payment: string | null;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
+  finance_charges_total: string;
+  currency_code: string;
 }
 
 export type BulkClassifyRequestResetFieldsItem = typeof BulkClassifyRequestResetFieldsItem[keyof typeof BulkClassifyRequestResetFieldsItem];
@@ -188,6 +202,8 @@ export interface MonthlyCommitmentOut {
   pending_total: string;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
   installments_total: string;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
+  bills_total: string;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d*$ */
   total: string;
 }
@@ -526,6 +542,15 @@ limit?: number;
 
 export type ListAllApiAccountsGetParams = {
 type?: string | null;
+};
+
+export type ListAllApiBillsGetParams = {
+account_id?: number | null;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };
 
 export type ListRunsApiSyncRunsGetParams = {

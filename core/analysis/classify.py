@@ -21,6 +21,13 @@ CARD_PAYMENT_CATEGORY_NAME = "Pagamento de fatura"
 # real, todas são pagamento de fatura de verdade.
 _CARD_PAYMENT_DESCRIPTION_RE = re.compile(r"\bpagamento d[ae] fatura\b")
 
+# `operationType` do Open Finance (Pluggy, desde setembro de 2026). Vem da
+# instituição ou é inferido pela Pluggy — no segundo caso, para pagamentos que
+# ela mesma gera e que antes chegavam com `null`. É o sinal mais direto dos três,
+# mas só existe em transação recente e só em cartão, por isso não substitui os
+# outros.
+CARD_PAYMENT_OPERATION_TYPE = "PAGAMENTO_FATURA"
+
 
 @dataclass(frozen=True, slots=True)
 class CategoryLookup:
@@ -40,12 +47,20 @@ def resolve_category(
     return mapping.get(pluggy_category)
 
 
-def is_card_payment(category: CategoryLookup | None, description_norm: str = "") -> bool:
-    """Pagamento de fatura pela categoria da Pluggy **ou** pela descrição.
+def is_card_payment(
+    category: CategoryLookup | None,
+    description_norm: str = "",
+    operation_type: str | None = None,
+) -> bool:
+    """Pagamento de fatura pelo `operationType`, pela categoria da Pluggy **ou**
+    pela descrição.
 
-    A segunda via existe porque a primeira falha em silêncio quando o banco
-    categoriza o pagamento como transferência — ver comentário no topo do módulo.
+    A via da descrição existe porque a da categoria falha em silêncio quando o
+    banco categoriza o pagamento como transferência — ver comentário no topo do
+    módulo.
     """
+    if operation_type == CARD_PAYMENT_OPERATION_TYPE:
+        return True
     if category is not None and category.category_name == CARD_PAYMENT_CATEGORY_NAME:
         return True
     return bool(_CARD_PAYMENT_DESCRIPTION_RE.search(description_norm))

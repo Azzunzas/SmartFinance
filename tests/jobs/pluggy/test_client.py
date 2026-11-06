@@ -211,3 +211,47 @@ def test_expired_api_key_triggers_single_reauth() -> None:
 
     assert item.status == "UPDATED"
     assert auth_calls == 2
+
+
+def test_list_bills_parses_amounts_in_reais_and_keeps_extra_fields() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/auth":
+            return httpx.Response(200, json={"apiKey": "key-1"})
+        if request.url.path == "/bills":
+            assert request.url.params["accountId"] == ACCOUNT_ID
+            return httpx.Response(
+                200,
+                json={
+                    "page": 1,
+                    "total": 1,
+                    "totalPages": 1,
+                    "results": [
+                        {
+                            "id": "44444444-4444-4444-4444-444444444441",
+                            "dueDate": "2026-11-10T00:00:00.000Z",
+                            "billClosingDate": "2026-11-04T00:00:00.000Z",
+                            "totalAmount": 2517.59,
+                            "totalAmountCurrencyCode": "BRL",
+                            "minimumPaymentAmount": 125.88,
+                            "allowsInstallments": False,
+                            "financeCharges": [
+                                {"id": "c1", "type": "IOF", "amount": 0.6, "currencyCode": "BRL"}
+                            ],
+                            "payments": [],
+                        }
+                    ],
+                },
+            )
+        raise AssertionError(f"unexpected path {request.url.path}")
+
+    with _client(handler) as client:
+        bills = client.list_bills(ACCOUNT_ID)
+
+    assert len(bills) == 1
+    bill = bills[0]
+    assert bill.total_amount == Decimal("2517.59")
+    assert bill.minimum_payment_amount == Decimal("125.88")
+    assert bill.due_date == datetime(2026, 11, 10, tzinfo=UTC)
+    assert bill.finance_charges[0].type == "IOF"
+    # `payments` não tem schema próprio, mas não pode sumir do `raw`.
+    assert bill.model_dump(by_alias=True)["payments"] == []

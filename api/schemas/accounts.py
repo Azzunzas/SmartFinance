@@ -20,6 +20,7 @@ class AccountOut(BaseModel):
     balance_due_date: dt.date | None
     balance_close_date: dt.date | None
     minimum_payment: Decimal | None
+    installment_credit_used: Decimal | None
     is_own: bool
     include_in_analysis: bool
     updated_at: dt.datetime

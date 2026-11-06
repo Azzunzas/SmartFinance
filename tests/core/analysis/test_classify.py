@@ -53,3 +53,13 @@ def test_card_payment_by_description_does_not_swallow_ordinary_spending() -> Non
     assert is_card_payment(None, "fatura de agua") is False
     assert is_card_payment(None, "mercado central") is False
     assert is_card_payment(None, "") is False
+
+
+def test_is_card_payment_true_for_operation_type_even_when_category_disagrees() -> None:
+    # Caso real do PicPay: o pagamento vem categorizado como transferência.
+    transferencia = CategoryLookup(category_id=9, category_name="Transferências", kind="EXPENSE")
+    assert is_card_payment(transferencia, "credito na fatura", "PAGAMENTO_FATURA") is True
+
+
+def test_is_card_payment_false_for_other_operation_type() -> None:
+    assert is_card_payment(None, "mercado central", "PAGAMENTO") is False

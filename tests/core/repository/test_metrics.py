@@ -110,7 +110,13 @@ def _investment_snapshot(session: Session, investment_id: int, *, day: date, bal
 
 
 def _transaction(
-    session: Session, account_id: int, *, accrual_date: date, direction: Direction, amount: str
+    session: Session,
+    account_id: int,
+    *,
+    accrual_date: date,
+    direction: Direction,
+    amount: str,
+    is_card_credit: bool = False,
 ) -> int:
     signed = Decimal(amount) if direction is Direction.IN else -Decimal(amount)
     transaction = Transaction(
@@ -122,6 +128,7 @@ def _transaction(
         amount=signed,
         amount_abs=Decimal(amount),
         direction=direction,
+        is_card_credit=is_card_credit,
         currency_code="BRL",
         date=accrual_date,
         occurred_at=as_instant(accrual_date),
@@ -503,3 +510,59 @@ def test_month_without_any_income_reports_zero_not_null(db_session: Session) -> 
 
     inputs = load_health_inputs(db_session, reference_date=date(2030, 4, 5), months=1)
     assert assess_financial_health(inputs).savings_rate is None
+
+
+def test_card_credit_reduces_spending_instead_of_counting_as_income(db_session: Session) -> None:
+    """Regra de domínio 11 (migration 0019). Caso real de outubro de 2026: dois
+    "CREDITO PULA COMPRA" no cartão do PicPay entravam como receita."""
+    bank = _account(db_session)
+    card = _account(db_session, type="CREDIT")
+    _transaction(
+        db_session, bank, accrual_date=date(2030, 5, 5), direction=Direction.IN, amount="1500.00"
+    )
+    _transaction(
+        db_session, card, accrual_date=date(2030, 5, 10), direction=Direction.OUT, amount="119.90"
+    )
+    _transaction(
+        db_session,
+        card,
+        accrual_date=date(2030, 5, 23),
+        direction=Direction.IN,
+        amount="119.90",
+        is_card_credit=True,
+    )
+    refresh_monthly_cashflow(db_session)
+
+    (record,) = load_monthly_cashflow(
+        db_session, reference_date=date(2030, 5, 31), months=1, order="asc"
+    )
+
+    assert record.total_in == Decimal("1500.00")
+    assert record.total_out == Decimal("0.00")
+    assert record.net == Decimal("1500.00")
+
+
+def test_card_bill_payment_credit_stays_out_of_cashflow(db_session: Session) -> None:
+    """O crédito do pagamento de fatura também é `is_card_credit`, mas a
+    exclusão de `is_card_payment` vem antes: não abate gasto nenhum."""
+    card = _account(db_session, type="CREDIT")
+    _transaction(
+        db_session, card, accrual_date=date(2030, 7, 10), direction=Direction.OUT, amount="300.00"
+    )
+    payment = _transaction(
+        db_session,
+        card,
+        accrual_date=date(2030, 7, 12),
+        direction=Direction.IN,
+        amount="300.00",
+        is_card_credit=True,
+    )
+    _classify(db_session, payment, is_card_payment=True)
+    refresh_monthly_cashflow(db_session)
+
+    (record,) = load_monthly_cashflow(
+        db_session, reference_date=date(2030, 7, 31), months=1, order="asc"
+    )
+
+    assert record.total_in == Decimal("0")
+    assert record.total_out == Decimal("300.00")

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from core.models import Account, Connection, Transaction
 from core.models.transaction import Direction, TxStatus
+from core.repository.bills import BillUpsert, upsert_bill
 from tests.helpers import as_instant
 
 
@@ -123,3 +124,41 @@ def test_upcoming_includes_pending_and_projects_installments(
         after[current_period]["installments_total"]
     ) - Decimal(before.get(current_period, {}).get("installments_total", "0"))
     assert installments_delta_current == Decimal("0")
+
+
+def _next_month_day(today: date, day: int) -> date:
+    year, month = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+    return date(year, month, day)
+
+
+def test_upcoming_includes_closed_bill_in_its_due_month(
+    client: TestClient, db_session: Session
+) -> None:
+    connection_id = _connection(db_session)
+    account_id = _account(db_session, connection_id)
+    today = datetime.now(UTC).date()
+    due = _next_month_day(today, 10)
+    period = due.strftime("%Y-%m")
+
+    before = _totals_by_period(client)
+    upsert_bill(
+        db_session,
+        BillUpsert(
+            account_id=account_id,
+            pluggy_bill_id=uuid.uuid4(),
+            due_date=due,
+            close_date=None,
+            total_amount=Decimal("2517.59"),
+            minimum_payment=None,
+            finance_charges_total=Decimal(0),
+            currency_code="BRL",
+            raw={},
+        ),
+    )
+    after = _totals_by_period(client)
+
+    def delta(field: str) -> Decimal:
+        return Decimal(after[period][field]) - Decimal(before[period][field])
+
+    assert delta("bills_total") == Decimal("2517.59")
+    assert delta("total") == Decimal("2517.59")

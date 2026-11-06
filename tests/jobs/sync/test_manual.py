@@ -72,6 +72,7 @@ def test_manual_sync_aggregates_partial_result_and_deactivates_missing_item(
             tx_updated=4,
             tx_duplicates=5,
             investments_synced=1,
+            bills_synced=0,
         )
 
     monkeypatch.setenv("PLUGGY_CLIENT_ID", "client-id")
@@ -161,6 +162,7 @@ def test_each_connection_of_a_manual_sync_is_labeled_manual(
             tx_updated=0,
             tx_duplicates=0,
             investments_synced=0,
+            bills_synced=0,
         )
 
     monkeypatch.setenv("PLUGGY_CLIENT_ID", "client-id")

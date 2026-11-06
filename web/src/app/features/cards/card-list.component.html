@@ -2,7 +2,7 @@
   <div>
     <p class="eyebrow">Crédito</p>
     <h1>Cartões</h1>
-    <p class="muted">Acompanhe as faturas em aberto dos cartões conectados.</p>
+    <p class="muted">Acompanhe as faturas e o limite dos cartões conectados.</p>
   </div>
 </header>
 
@@ -13,9 +13,14 @@
 } @else {
   <section class="cards-summary">
     <div>
-      <span>Fatura total em aberto</span>
-      <strong class="negative">{{ totalBill() | currency: 'BRL' }}</strong>
-      <small>somatório das faturas listadas</small>
+      <span>Faturas a vencer</span>
+      @if (bills.error()) {
+        <strong>—</strong>
+        <small>não foi possível carregar as faturas</small>
+      } @else {
+        <strong class="negative">{{ totalDue() | currency: 'BRL' }}</strong>
+        <small>faturas fechadas com vencimento a partir de hoje</small>
+      }
     </div>
     <div>
       <span>Cartões conectados</span>
@@ -37,32 +42,83 @@
         <article class="credit-card">
           <div class="card-topline">
             <span class="card-icon" aria-hidden="true">▭</span>
-            <span class="open-bill-badge">Fatura em aberto</span>
+            @if (latestBill(card.id); as bill) {
+              @if (isDue(bill)) {
+                <span class="bill-badge due">Vence {{ bill.due_date | date: 'dd/MM' }}</span>
+              } @else {
+                <span class="bill-badge past">Venceu {{ bill.due_date | date: 'dd/MM' }}</span>
+              }
+            }
           </div>
           <h3>{{ card.name ?? 'Cartão sem nome' }}</h3>
           <p class="card-identity">
             {{ card.brand ?? 'Bandeira não informada' }}
             @if (card.number_masked) { · {{ card.number_masked }} }
           </p>
-          <p class="bill-amount negative">{{ +(card.balance ?? 0) | currency: 'BRL' }}</p>
-          <p class="bill-label">Fatura atual</p>
+
+          @if (bills.isLoading()) {
+            <p class="bill-label bill-status">Carregando fatura...</p>
+          } @else if (bills.error()) {
+            <p class="bill-label bill-status">Não foi possível carregar a fatura.</p>
+          } @else if (latestBill(card.id); as bill) {
+            <p class="bill-amount" [class.negative]="isDue(bill)">
+              {{ +bill.total_amount | currency: 'BRL' }}
+            </p>
+            <p class="bill-label">Última fatura fechada</p>
+            <dl class="card-details">
+              <div><dt>Vencimento</dt><dd>{{ bill.due_date | date: 'dd/MM/yyyy' }}</dd></div>
+              @if (bill.close_date) {
+                <div><dt>Fechamento</dt><dd>{{ bill.close_date | date: 'dd/MM/yyyy' }}</dd></div>
+              }
+              @if (bill.minimum_payment) {
+                <div><dt>Pagamento mínimo</dt><dd>{{ +bill.minimum_payment | currency: 'BRL' }}</dd></div>
+              }
+              @if (+bill.finance_charges_total > 0) {
+                <div>
+                  <dt>Juros e encargos</dt>
+                  <dd class="negative">{{ +bill.finance_charges_total | currency: 'BRL' }}</dd>
+                </div>
+              }
+            </dl>
+          } @else {
+            <p class="bill-label bill-status">
+              Nenhuma fatura fechada sincronizada ainda. Ela aparece aqui depois do próximo fechamento.
+            </p>
+          }
+
           @if (card.credit_limit) {
             <div class="limit-progress">
               <div class="limit-track"><span [style.width.%]="utilizationPercent(card.balance, card.credit_limit)"></span></div>
               <p>
+                {{ +(card.balance ?? 0) | currency: 'BRL' }} de limite usado ·
                 {{ +(card.available_credit_limit ?? 0) | currency: 'BRL' }} disponível de
                 {{ +card.credit_limit | currency: 'BRL' }}
               </p>
             </div>
           }
-          <dl class="card-details">
-            @if (card.balance_due_date) {
-              <div><dt>Próximo vencimento</dt><dd>{{ card.balance_due_date | date: 'dd/MM/yyyy' }}</dd></div>
-            }
-            @if (card.minimum_payment) {
-              <div><dt>Pagamento mínimo</dt><dd>{{ +card.minimum_payment | currency: 'BRL' }}</dd></div>
-            }
-          </dl>
+
+          @if (+(card.installment_credit_used ?? 0) > 0) {
+            <p class="deferred-credit">
+              Parcelado ou adiado:
+              <strong>{{ +(card.installment_credit_used ?? 0) | currency: 'BRL' }}</strong>
+              <span>volta em faturas futuras</span>
+            </p>
+          }
+
+          @if (previousBills(card.id).length) {
+            <div class="previous-bills">
+              <p class="previous-title">Faturas anteriores</p>
+              <ul>
+                @for (bill of previousBills(card.id); track bill.id) {
+                  <li>
+                    <span>Venc. {{ bill.due_date | date: 'MM/yyyy' }}</span>
+                    <span>{{ +bill.total_amount | currency: 'BRL' }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
           <div class="card-updated">
             Atualizado em {{ card.updated_at | date: 'dd/MM/yyyy HH:mm' }}
           </div>
@@ -70,7 +126,7 @@
       } @empty {
         <section class="empty-state">
           <h3>Nenhum cartão conectado</h3>
-          <p class="muted">Quando houver cartões sincronizados, as faturas em aberto aparecerão aqui.</p>
+          <p class="muted">Quando houver cartões sincronizados, as faturas aparecerão aqui.</p>
         </section>
       }
     </div>

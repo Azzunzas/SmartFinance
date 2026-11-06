@@ -269,3 +269,46 @@ def test_run_analysis_twice_does_not_duplicate_matches(db_session: Session) -> N
         .where(PlannedItemMatch.planned_item_id == planned_item.id)
     ).scalar_one()
     assert count == 1
+
+
+def test_run_analysis_marks_card_payment_by_operation_type(db_session: Session) -> None:
+    """Pagamento de fatura que o banco categoriza como transferência e cuja
+    descrição não bate com o padrão — só o `operationType` denuncia."""
+    connection = Connection(
+        pluggy_item_id=uuid.uuid4(),
+        connector_id=200,
+        connector_name="MeuPluggy",
+        status="UPDATED",
+        raw={},
+    )
+    db_session.add(connection)
+    db_session.flush()
+    account_id = _account(db_session, connection.id)
+    payment = Transaction(
+        account_id=account_id,
+        pluggy_transaction_id=uuid.uuid4(),
+        fingerprint=f"tx-fp-{uuid.uuid4()}",
+        description="CREDITO NA FATURA",
+        description_norm="credito na fatura",
+        amount=Decimal("2382.91"),
+        amount_abs=Decimal("2382.91"),
+        direction=Direction.IN,
+        currency_code="BRL",
+        date=date(2026, 10, 9),
+        occurred_at=as_instant(date(2026, 10, 9)),
+        accrual_date=date(2026, 10, 9),
+        status=TxStatus.POSTED,
+        pluggy_category="Transfers",
+        raw={"operationType": "PAGAMENTO_FATURA"},
+    )
+    db_session.add(payment)
+    db_session.flush()
+
+    run_analysis(db_session)
+
+    classification = db_session.execute(
+        sa.select(TransactionClassification).where(
+            TransactionClassification.transaction_id == payment.id
+        )
+    ).scalar_one()
+    assert classification.is_card_payment is True

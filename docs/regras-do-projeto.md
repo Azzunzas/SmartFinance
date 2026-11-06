@@ -37,6 +37,7 @@ Estas regras determinam se os números do app são verdadeiros. Toda implementa�
 8. **Capturar `balance_snapshot` a cada sync.** A API entrega o saldo atual, não uma série histórica. O que não for capturado se perde.
 9. **Normalizar o sinal na ingestão.** `direction` (IN/OUT) e `amount_abs` são resolvidos uma única vez. Nenhum `CASE WHEN account.type` espalhado pelas queries.
 10. **Filtrar investimentos por `is_active`.** Os inativos são guardados, mas nunca exibidos por padrão.
+11. **Crédito no cartão não é receita.** Estorno, "pula compra" e cashback lançados na conta do cartão (`is_card_credit`, resolvido na ingestão) abatem o gasto do mês em que foram lançados. Pagamento de fatura continua fora pela regra 2. As categorias não são abatidas: o banco categoriza o crédito diferente da compra. Consequência aceita: no "pula compra", o gasto sai do mês da compra e volta no mês da cobrança. Revisar quando a primeira cobrança adiada aparecer (fatura de dezembro de 2026).
 
 ---
 

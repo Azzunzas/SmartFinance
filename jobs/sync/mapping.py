@@ -1,19 +1,33 @@
+from decimal import Decimal
+
 from core.ingestion.normalize import (
     compute_account_fingerprint,
     compute_transaction_fingerprint,
     mask_account_number,
     normalize_description,
     resolve_accrual_date,
+    resolve_card_credit,
     resolve_direction,
 )
 from core.models.transaction import TxStatus
 from core.repository.accounts import AccountUpsert
+from core.repository.bills import BillUpsert
 from core.repository.connections import ConnectionUpsert
 from core.repository.investments import InvestmentUpsert
 from core.repository.transactions import TransactionUpsert
-from jobs.pluggy.schemas import PluggyAccount, PluggyInvestment, PluggyItem, PluggyTransaction
+from jobs.pluggy.schemas import (
+    PluggyAccount,
+    PluggyBill,
+    PluggyCreditData,
+    PluggyInvestment,
+    PluggyItem,
+    PluggyTransaction,
+)
 
 _INVESTMENT_ACTIVE_STATUS = "ACTIVE"
+# Linha de crédito onde ficam compras parceladas e o "pula compra" do PicPay
+# até voltarem numa fatura. Nome do Open Finance, não da Pluggy.
+_INSTALLMENT_CREDIT_LINE = "CREDITO_PARCELADO"
 
 # Ponte entre a camada bruta (jobs/pluggy/schemas.py, espelha o JSON da Pluggy)
 # e o domínio normalizado (core/). É por isso que esse arquivo mora em jobs/ e
@@ -63,8 +77,20 @@ def map_account(
             else None
         ),
         minimum_payment=credit_data.minimum_payment if credit_data else None,
+        installment_credit_used=_installment_credit_used(credit_data),
         raw=account.model_dump(mode="json", by_alias=True),
     )
+
+
+def _installment_credit_used(credit_data: PluggyCreditData | None) -> Decimal | None:
+    """`None` quando o banco não informa a linha — diferente de R$ 0 informado."""
+    lines = (credit_data.disaggregated_credit_limits or []) if credit_data else []
+    used = [
+        line.used_amount
+        for line in lines
+        if line.line_name == _INSTALLMENT_CREDIT_LINE and line.used_amount is not None
+    ]
+    return sum(used, Decimal(0)) if used else None
 
 
 def map_transaction(
@@ -100,6 +126,7 @@ def map_transaction(
         amount=transaction.amount,
         amount_abs=amount_abs,
         direction=direction,
+        is_card_credit=resolve_card_credit(account_type, direction),
         currency_code=transaction.currency_code,
         date=posted_date,
         occurred_at=transaction.date,
@@ -111,6 +138,20 @@ def map_transaction(
         payment_method=payment_method,
         balance_after=transaction.balance,
         raw=transaction.model_dump(mode="json", by_alias=True),
+    )
+
+
+def map_bill(bill: PluggyBill, *, account_id: int) -> BillUpsert:
+    return BillUpsert(
+        account_id=account_id,
+        pluggy_bill_id=bill.id,
+        due_date=bill.due_date.date(),
+        close_date=bill.bill_closing_date.date() if bill.bill_closing_date else None,
+        total_amount=bill.total_amount,
+        minimum_payment=bill.minimum_payment_amount,
+        finance_charges_total=sum((c.amount for c in bill.finance_charges), Decimal(0)),
+        currency_code=bill.total_amount_currency_code or "BRL",
+        raw=bill.model_dump(mode="json", by_alias=True),
     )
 
 

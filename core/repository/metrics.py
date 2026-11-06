@@ -331,6 +331,13 @@ def load_category_spend(session: Session, period: str) -> list[CategorySpendReco
     (decisão de 2026-08-21: mostrar o buraco em vez de escondê-lo, mesmo
     raciocínio de `resolve_category`).
 
+    Só saídas, sem abater crédito no cartão (estorno, "pula compra"), ao
+    contrário do `total_out` da `mv_monthly_cashflow` (regra de domínio 11): o
+    banco categoriza o crédito diferente da compra — o "pula compra" da
+    academia veio como "Compras" —, e abater por categoria poderia deixar uma
+    categoria negativa. Por isso a soma das categorias pode passar do
+    `total_out` do mês.
+
     Sem zero-fill de propósito (diferente do cashflow/planned-vs-actual):
     com ~12 categorias fixas, listar as que não tiveram gasto no mês só
     teria poluído a resposta — decisão de 2026-08-21."""

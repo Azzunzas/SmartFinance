@@ -100,13 +100,21 @@
   font-weight: 700;
 }
 
-.open-bill-badge {
+.bill-badge {
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-negative) 16%, transparent);
-  color: var(--color-negative);
   font-size: 0.7rem;
   font-weight: 700;
+}
+
+.bill-badge.due {
+  background: color-mix(in srgb, var(--color-negative) 16%, transparent);
+  color: var(--color-negative);
+}
+
+.bill-badge.past {
+  background: var(--color-surface-active);
+  color: var(--color-text-muted);
 }
 
 .credit-card h3 {
@@ -132,6 +140,56 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: 0.78rem;
+}
+
+.bill-status {
+  margin-top: auto;
+}
+
+.deferred-credit {
+  margin: 0.6rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.deferred-credit strong {
+  color: var(--color-warning);
+}
+
+.deferred-credit span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+}
+
+.previous-bills {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.previous-title {
+  margin: 0 0 0.4rem;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+}
+
+.previous-bills ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.previous-bills li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0;
+  font-size: 0.76rem;
+}
+
+.previous-bills li span:first-child {
+  color: var(--color-text-muted);
 }
 
 .card-updated {
@@ -168,7 +226,8 @@
 
 .card-details {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
   margin: 0.85rem 0 0;
 }
 

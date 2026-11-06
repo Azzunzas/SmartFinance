@@ -10,6 +10,8 @@ import httpx
 from jobs.pluggy.schemas import (
     PluggyAccount,
     PluggyAccountPage,
+    PluggyBill,
+    PluggyBillPage,
     PluggyInvestment,
     PluggyInvestmentPage,
     PluggyItem,
@@ -100,6 +102,13 @@ class PluggyClient:
         exemplo real)."""
         response = self._request("GET", "/investments", params={"itemId": str(item_id)})
         return PluggyInvestmentPage.model_validate(response.json()).results
+
+    def list_bills(self, account_id: UUID | str) -> list[PluggyBill]:
+        """Faturas fechadas de um cartão. Sem paginação, mesmo raciocínio de
+        `list_investments`: é uma fatura por mês e o `pageSize` padrão da
+        Pluggy é 500 (11 e 15 faturas nos dois cartões reais)."""
+        response = self._request("GET", "/bills", params={"accountId": str(account_id)})
+        return PluggyBillPage.model_validate(response.json()).results
 
     def list_transactions(
         self,
